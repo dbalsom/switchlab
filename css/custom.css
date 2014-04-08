@@ -1,0 +1,54 @@
+
+.bodyDiv {
+    
+    background-image: url('img/window_bg.png');
+    margin: 0 auto;
+    padding: 0 20px;
+
+}
+
+.contentDiv {
+  width: 1240px;
+  background-color:white;
+  padding: 20px 20px;
+}
+
+html,body {
+    margin:0;
+    padding:0;
+}
+
+.tab-content > .active {
+  border-left: 1px solid LightSlateGray ;
+  border-right: 1px solid LightSlateGray ;
+  border-bottom: 1px solid LightSlateGray ;
+  border-top-color: transparent;
+  background-color:white;
+}
+
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus {
+  border: 1px solid LightSlateGray;
+  border-bottom: 1px solid transparent;
+
+}
+
+.nav-tabs > li > a {
+  margin-right: 2px;
+  border: 1px solid LightSteelBlue;
+  border-bottom-color: transparent;
+}
+
+.nav-tabs > li > a {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
+
+}
+.nav-tabs > li > a:hover {
+  border-bottom: 1px solid LightSlateGray;
+}
+
+.nav-tabs {
+  border-bottom: 1px solid LightSlateGray;
+}
