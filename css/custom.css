@@ -1,10 +1,14 @@
 
+/* Fix for boostrap.css & angular-ui */
+.nav, .pagination, .carousel, .panel-title a {
+    cursor: pointer;
+}
+
 .bodyDiv {
     
     background-image: url('img/window_bg.png');
     margin: 0 auto;
     padding: 0 20px;
-
 }
 
 .contentDiv {
@@ -13,9 +17,84 @@
   padding: 20px 20px;
 }
 
+.canvasDiv {
+    position: relative;
+    padding: 0px;
+}
+    
 html,body {
     margin:0;
     padding:0;
+}
+
+.alert-compact {
+  margin: 5px;
+  padding: 5px 5px;
+
+}
+
+input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:focus {
+    outline: none;
+    border-color: #e9322d;
+    -webkit-box-shadow: 0 0 6px #f8b9b7;
+    -moz-box-shadow: 0 0 6px #f8b9b7;
+    box-shadow: 0 0 6px #f8b9b7;
+}
+input:focus:invalid, textarea:focus:invalid, select:focus:invalid {
+    
+    color: #b94a48;
+    border: 1px solid red;
+    border-color: #ee5f5b;
+}
+input:invalid, textarea:invalid, select:invalid {
+    
+    color: #b94a48;
+    border: 1px solid red;
+    border-color: #ee5f5b;
+}
+
+.toolbar {
+    background-image: -webkit-gradient(
+        linear,
+        left top,
+        left bottom,
+        color-stop(0, #626B70),
+        color-stop(1, #464C56)
+    );
+    background-image: -o-linear-gradient(bottom, #626B70 0%, #464C56 100%);
+    background-image: -moz-linear-gradient(bottom, #626B70 0%, #464C56 100%);
+    background-image: -webkit-linear-gradient(bottom, #626B70 0%, #464C56  100%);
+    background-image: -ms-linear-gradient(bottom, #626B70 0%, #464C56  100%);
+    background-image: linear-gradient(to bottom,  #626B70 0%, #464C56 100%);
+
+    border: 2px LightSlateGray outset;
+    border-style: outset;
+    padding: 5px;
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
+
+.toolbarbutton {
+    margin: 1px;
+    border: 1px outset;
+}
+
+.toolbarbutton:active,
+.toolbarbutton.active {
+  border: 1px transparent;
+  -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.5);
+}
+
+
+.tabContainer {
+  padding: 8px 8px;
+}
+
+.popupTable {
+  margin-bottom: 0px;
+  margin:0px;
 }
 
 .tab-content > .active {
