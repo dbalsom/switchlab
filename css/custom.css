@@ -18,7 +18,8 @@
 }
 
 .canvasDiv {
-    position: relative;
+    cursor: default; /* Avoid text caret when dragging on canvas */
+    position: relative; /* Allow child popups inside */
     padding: 0px;
 }
     
