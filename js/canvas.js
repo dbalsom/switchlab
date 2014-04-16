@@ -188,9 +188,9 @@ SL.canvas = (function($) {
                 srcAngle += bubble_angle;
                 dstAngle -= bubble_angle;
             }           
-            visitedList[p] = true;
+            
         }
-        
+        visitedList[p] = true;
         _linkCntr.addChild( linkShape );
     }
     
@@ -228,7 +228,7 @@ SL.canvas = (function($) {
         this.nodeCntr.addChild( this.nodeBubbles );
         this.nodeCntr.addChild( this.nodeBmp );
         this.nodeCntr.addChild( this.nodeTxt );
-
+        
         this.nodeCntr.x = this.x - this.nodeImg.width / 2 + 0.5;
         this.nodeCntr.y = this.y - this.nodeImg.height / 2 + 0.5;        
         
