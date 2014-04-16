@@ -85,7 +85,8 @@ SL.sim = (function($) {
     }
     
     function getNeighbors( deviceName ) {
-        var neighbors = [];
+    
+        var neighbors = {};
         var device = _devices[deviceName];
         var neighborName;
         
@@ -93,10 +94,14 @@ SL.sim = (function($) {
         
         for( i = 0; i < device._interfaces.length; i++ ) {
             if( device._interfaces[i]._hasPhysLink ) {
+                
                 neighborName = device._interfaces[i]._linkedTo._host._name;
 
                 if( neighborName ) {
-                    neighbors.push( neighborName );
+                    if( !neighbors[ neighborName ] ) {
+                        neighbors[ neighborName ] = { interfaces: [] };
+                    }
+                    neighbors[neighborName].interfaces.push( neighborName );
                 }
             }
         }

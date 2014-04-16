@@ -49,6 +49,7 @@ SL.canvas = (function($) {
 
     var CANVAS_ID = "C";
     var NODE_RADIUS = 40;
+    var INTERFACE_RADIUS = 8;
     var HIT_DISTANCE = 40;
     
     var pub = {};
@@ -61,6 +62,8 @@ SL.canvas = (function($) {
 
     var _linkCntr = {};    
     var _linkCursor = {};
+    var _bubbleCntr = {};
+    
     var _nodes = {};
     var _nodeCount = 0;
     
@@ -125,26 +128,67 @@ SL.canvas = (function($) {
     function updateLinks() {
 
         _linkCntr.removeAllChildren();
-       
+        vistedList = [];
+        
         if( _nodeCount >= 2 ) {
             for( node in _nodes ) { 
-                drawLinksFrom( _nodes[node] );
+                drawLinksFrom( _nodes[node], vistedList );
             }
         }
 
         _dirty = true;
     }    
 
-    function drawLinksFrom( node ) {
+    function drawLinksFrom( node, visitedList ) {
     
         var neighbors = SL.sim.getNeighbors( node.name );
+
         var linkShape = new createjs.Shape();
-    
-        for( i = 0; i < neighbors.length; i++ ) {
+        var srcBubbleShape = node.nodeBubbles;
+
+        var srcAngle;
+        var dstAngle;
+        var srcPt;
+        var dstPt;
+        var n_interfaces;
+        var bubble_angle;
+        var bubble_index;
+        var interface_angle;
+        var bubblePt;
+                
+        srcBubbleShape.graphics.clear();
         
-            //console.log( "This would be a line from: " + node.name + " to: " + neighbors[i] );
-            linkShape.graphics.moveTo( node.x, node.y ).beginStroke("black").setStrokeStyle(2);
-            linkShape.graphics.lineTo( _nodes[neighbors[i]].x, _nodes[neighbors[i]].y).endStroke();
+        for( p in neighbors ) {
+            //console.log( "This would be a line from: " + node.name + " to: " + p );
+            
+            n_interfaces = neighbors[p].interfaces.length;
+            bubble_angle = Math.atan((INTERFACE_RADIUS+1) / ((NODE_RADIUS+1 + INTERFACE_RADIUS+1))) * 2;
+            interface_angle = getAngleFromLine( node.x, node.y, _nodes[p].x, _nodes[p].y );
+            
+            bubble_index = ( n_interfaces - 1 ) / 2.0;
+            
+            srcAngle = interface_angle - ( bubble_index * bubble_angle );      
+            dstAngle = interface_angle + ( bubble_index * bubble_angle ) + Math.PI;     
+            
+            for( i = 0; i < neighbors[p].interfaces.length; i++ ) {
+
+                srcPt = getPointOnCircle( node.x, node.y, srcAngle, NODE_RADIUS + INTERFACE_RADIUS );
+                dstPt = getPointOnCircle( _nodes[p].x, _nodes[p].y, dstAngle , NODE_RADIUS + INTERFACE_RADIUS );
+                
+                bubblePt = srcBubbleShape.globalToLocal( srcPt.x, srcPt.y );
+                srcBubbleShape.graphics.beginStroke("black").setStrokeStyle(1).beginFill("white");
+                srcBubbleShape.graphics.drawCircle( bubblePt.x, bubblePt.y, INTERFACE_RADIUS ).endFill().endStroke();
+                
+                if( !visitedList[p] ) {
+                    // Don't draw segment lines twice
+                    linkShape.graphics.moveTo( srcPt.x, srcPt.y ).beginStroke("black").setStrokeStyle(2);
+                    linkShape.graphics.lineTo( dstPt.x, dstPt.y).endStroke();
+                }
+
+                srcAngle += bubble_angle;
+                dstAngle -= bubble_angle;
+            }           
+            visitedList[p] = true;
         }
         
         _linkCntr.addChild( linkShape );
@@ -176,9 +220,12 @@ SL.canvas = (function($) {
         this.nodeCirc.graphics.drawCircle( this.nodeImg.width/2, this.nodeImg.height/2,NODE_RADIUS).endFill().endStroke();
         this.nodeCirc.shadow = new createjs.Shadow("rgba(0,0,0,.5)", 3, 3, 15);
         
+        this.nodeBubbles = new createjs.Shape();
+        
         this.nodeCntr = new createjs.Container();  
         this.nodeCntr.name = name;
         this.nodeCntr.addChild( this.nodeCirc );
+        this.nodeCntr.addChild( this.nodeBubbles );
         this.nodeCntr.addChild( this.nodeBmp );
         this.nodeCntr.addChild( this.nodeTxt );
 
