@@ -26,7 +26,10 @@ app.controller('MainUIController', ['$scope', 'uiMaskConfig',
         $scope.tabs = SL.sim.getDeviceNames();
         $scope.selectedSwitch = SL.main.getSelectedSwitch();
     
-    }
+    };
+    $scope.myalert = function() {
+        SL.main.export();
+    };
     $scope.$watch('ui_model.app_mode', function(mode) {
         SL.main.setMode( mode );
     });

@@ -38,10 +38,22 @@
     <div class="contentDiv"  ng-controller="MainUIController">
 
           <h2>SwitchLab</h2>
-              
+                       
+          
           <div class="canvasDiv" ng-click="updateTabs()">
             
             <div class="toolbar">
+              <div class="btn-group">
+                <button type="button" class="btn toolbarbutton dropdown-toggle"><span class="glyphicon glyphicon-file"></span></button>
+                
+                  <ul class="dropdown-menu">
+                    <li role="presentation">
+                      <a role="menuitem"><span class="glyphicon glyphicon-open"></span><span> Open</span></a>
+                      <a role="menuitem" ng-click="myalert()"><span class="glyphicon glyphicon-save"></span><span> Save</span></a>
+                    </li>
+              </ul>
+              </div>
+              
               <div class="btn-group">
                   <button type="button" class="btn toolbarbutton" 
                           ng-model="ui_model.app_mode" btn-radio="'add'">Add</button>

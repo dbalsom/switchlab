@@ -23,9 +23,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-var SL = (SL || {});
+var U = (U || {});
 
-SL.util = (function($) {
+U = (function($) {
 
     var pub = {};
 

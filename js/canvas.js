@@ -71,27 +71,35 @@ SL.canvas = (function($) {
     
     var _dragging = false;
 
-    function getAngleFromLine( x1, y1, x2, y2 ) {
-        
+    function findAngleFromLine( x1, y1, x2, y2 ) {
         return Math.atan2( y2-y1, x2-x1 );        
     }
     
-    function getPointOnCircle( cx, cy, a, r ) {
-        
+    function findPointOnCircle( cx, cy, a, r ) {
         return { x: cx + r * Math.cos( a ), y: cy + r * Math.sin( a ) };
     }
     
-    function getDistance( x1, y1, x2, y2 ) {
+    function findDistance( x1, y1, x2, y2 ) {
         return Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
     }
     
+    function testInCircle( pt_x, pt_y, cx, cy, r ) {
+        var b = ((r*r) > ((cx-pt_x) * (cx-pt_x) + (cy-pt_y) * (cy-pt_y))) ? true:false;
+        return b;
+    }
+    
+    function isBetween( value, amin, amax ) {
+        var min = amin < amax ? amin : amax;
+        var max = amax > amin ? amax : amin;
+        
+        return ( value >= min && value <= max );
+    }
+    
+    
     function hitTestNodes( x, y ) {
         var n;
-        var d;
         for( n in _nodes ) {
-            
-            d = getDistance( x, y, _nodes[n].x, _nodes[n].y );
-            if( d < HIT_DISTANCE ) {
+            if( testInCircle( x, y, _nodes[n].x, _nodes[n].y, HIT_DISTANCE )) {
                 return _nodes[n];
             }
         }
@@ -128,11 +136,12 @@ SL.canvas = (function($) {
     function updateLinks() {
 
         _linkCntr.removeAllChildren();
-        vistedList = [];
+        var visitedList = [];
         
         if( _nodeCount >= 2 ) {
             for( node in _nodes ) { 
-                drawLinksFrom( _nodes[node], vistedList );
+                drawLinksFrom( _nodes[node], visitedList );
+                visitedList[node] = true;
             }
         }
 
@@ -151,32 +160,76 @@ SL.canvas = (function($) {
         var srcPt;
         var dstPt;
         var n_interfaces;
+        
         var bubble_angle;
         var bubble_index;
-        var interface_angle;
+        var angleToNeighbor;
         var bubblePt;
                 
         srcBubbleShape.graphics.clear();
+        var bubbleList = [];
+        var interfaceBubbleList = [];
+        var angleStart;
+        var angleEnd;
+        var bubbleDistance;
+        var bubbleBump;
+        var collisionAngle;
+        var tempBump;
+        var collision = false;
+        var collideDistance = ((INTERFACE_RADIUS + 2) * 2 );
         
         for( p in neighbors ) {
             //console.log( "This would be a line from: " + node.name + " to: " + p );
             
+            interfaceBubbleList.length = 0;
             n_interfaces = neighbors[p].interfaces.length;
             bubble_angle = Math.atan((INTERFACE_RADIUS+1) / ((NODE_RADIUS+1 + INTERFACE_RADIUS+1))) * 2;
-            interface_angle = getAngleFromLine( node.x, node.y, _nodes[p].x, _nodes[p].y );
+            angleToNeighbor = findAngleFromLine( node.x, node.y, _nodes[p].x, _nodes[p].y );
             
             bubble_index = ( n_interfaces - 1 ) / 2.0;
             
-            srcAngle = interface_angle - ( bubble_index * bubble_angle );      
-            dstAngle = interface_angle + ( bubble_index * bubble_angle ) + Math.PI;     
+            srcAngle = angleToNeighbor - ( bubble_index * bubble_angle );      
+            dstAngle = angleToNeighbor + ( bubble_index * bubble_angle ) + Math.PI;     
             
+            // Draw bubbles for each interface connected to the current neighbor
             for( i = 0; i < neighbors[p].interfaces.length; i++ ) {
+                collision = false;
+                srcPt = findPointOnCircle( node.x, node.y, srcAngle, NODE_RADIUS+1 + INTERFACE_RADIUS );
 
-                srcPt = getPointOnCircle( node.x, node.y, srcAngle, NODE_RADIUS + INTERFACE_RADIUS );
-                dstPt = getPointOnCircle( _nodes[p].x, _nodes[p].y, dstAngle , NODE_RADIUS + INTERFACE_RADIUS );
+                // Collision check against previously drawn interface bubbles
+                var smallestDistance = collideDistance;
+                for( j = 0 ; j < bubbleList.length ; j++ ) {
+                
+                    bubbleDistance = findDistance( srcPt.x, srcPt.y, bubbleList[j].x, bubbleList[j].y );
+
+                    // We want to calculate the 'bump factor' with the closest bubble to avoid overlaps
+                    if( bubbleDistance < collideDistance ) {
+                        if( bubbleDistance < smallestDistance ) {
+                            smallestDistance = bubbleDistance;
+                        }
+                        collision = true;
+                    }
+                }
+
+                // Push bubble up to avoid collision
+                
+                // The math here is probably dumb but I hacked at it until it basically worked.
+                var sinTerm = (1 - (smallestDistance / collideDistance)) * (Math.PI/2);
+                console.log( "d:" + bubbleDistance + " smallest:" + smallestDistance + " sin:" + sinTerm );
+                bubbleBump = NODE_RADIUS + 1 + INTERFACE_RADIUS + ( Math.abs( Math.sin( sinTerm )) * collideDistance );
+
+                srcPt = findPointOnCircle( node.x, node.y, srcAngle, bubbleBump );                
+                
+                
+                dstPt = findPointOnCircle( _nodes[p].x, _nodes[p].y, dstAngle, NODE_RADIUS+1 + INTERFACE_RADIUS );
                 
                 bubblePt = srcBubbleShape.globalToLocal( srcPt.x, srcPt.y );
-                srcBubbleShape.graphics.beginStroke("black").setStrokeStyle(1).beginFill("white");
+                if( collision ) {
+                    srcBubbleShape.graphics.beginStroke("black").setStrokeStyle(1).beginFill("red");   
+                }
+                else {
+                    srcBubbleShape.graphics.beginStroke("black").setStrokeStyle(1).beginFill("white");
+                }
                 srcBubbleShape.graphics.drawCircle( bubblePt.x, bubblePt.y, INTERFACE_RADIUS ).endFill().endStroke();
                 
                 if( !visitedList[p] ) {
@@ -184,13 +237,14 @@ SL.canvas = (function($) {
                     linkShape.graphics.moveTo( srcPt.x, srcPt.y ).beginStroke("black").setStrokeStyle(2);
                     linkShape.graphics.lineTo( dstPt.x, dstPt.y).endStroke();
                 }
-
+                
+                interfaceBubbleList.push( { x: srcPt.x, y: srcPt.y } );
                 srcAngle += bubble_angle;
                 dstAngle -= bubble_angle;
             }           
             
+            bubbleList = bubbleList.concat( interfaceBubbleList );
         }
-        visitedList[p] = true;
         _linkCntr.addChild( linkShape );
     }
     
@@ -221,6 +275,7 @@ SL.canvas = (function($) {
         this.nodeCirc.shadow = new createjs.Shadow("rgba(0,0,0,.5)", 3, 3, 15);
         
         this.nodeBubbles = new createjs.Shape();
+        this.bubbleList = [];
         
         this.nodeCntr = new createjs.Container();  
         this.nodeCntr.name = name;
@@ -259,7 +314,7 @@ SL.canvas = (function($) {
         });
         
         this.nodeCntr.on( "pressmove", function( evt ) {
-            var dist = getDistance( n.x, n.y, evt.stageX, evt.stageY );
+            var dist = findDistance( n.x, n.y, evt.stageX, evt.stageY );
             // Only start dragging a node after the cursor moves a set distance
             // Otherwise intended clicks are often interpreted as tiny drags
             if( dist > 10 ) {
