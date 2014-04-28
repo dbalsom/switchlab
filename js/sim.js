@@ -23,12 +23,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-var SL = (SL || {});
+app.factory( 'net', function()
+{
 
-SL.sim = (function($) {
-    var pub = {};
 
-    var _devices = { length: 0 };
+
+});
+
+app.factory( 'sim', function() 
+{
+    'use strict';
+    
+    var _devices = {};
     var _interfaceStrings = {
             ETHERNET: "et0/",
             FAST_ETHERNET: "fa0/",
@@ -37,7 +43,9 @@ SL.sim = (function($) {
     
     var MAC_OUI = "FCFFFF";
     var _nextMAC = 1;
-    var _globalMACTable = [];
+    
+    
+    var _globalMACTable = {};
     
     function getUniqueMAC() {
         var nic;
@@ -57,31 +65,31 @@ SL.sim = (function($) {
         var hostName;
         do { 
             hostName = chance.city().toLowerCase();
-        } while( !isValidHostName( hostName ) );
+        } while( !isValidHostName( hostName ) && !isUniqueHostName( hostName ));
         return hostName;
     }
-    
+        
     function isValidMAC( mac ) {
-        // primarily, make sure there isn't a duplicate MAC on the network
-        if( _globalMACTable[mac] ) {
-            return false;
-        }
-        return true;
+
+        // Replace any separator characters
+        mac = mac.replace( /[\.:-]/g, '' ).toUpperCase();
+              
+        // Confirm exactly 12 hex digits and not already in use
+        return mac.match( /[0-9A-F]{12}/ ) && !_globalMACTable[mac];
     }
 
+    function isUniqueHostName( testName ) {
+        return ( !_devices[testName.toLowerCase()] );
+    }
+    
     function isValidHostName( testName ) {
 
         var hostRegEx = /^([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])$/i;
-        var isValid;
+        var isValid = false;
         if( testName && testName.length > 0 ) {
             isValid = hostRegEx.test( testName );
         }
-
-        if( isValid ) {
-            // does device name already exist?
-            return ( !_devices[testName.toLowerCase()] );
-        }
-        return false;        
+        return isValid;        
     }
     
     function getNeighbors( deviceName ) {
@@ -92,7 +100,7 @@ SL.sim = (function($) {
         
         if( !device ) return [];
         
-        for( i = 0; i < device._interfaces.length; i++ ) {
+        for( var i = 0; i < device._interfaces.length; i++ ) {
             if( device._interfaces[i]._hasPhysLink ) {
                 
                 neighborName = device._interfaces[i]._linkedTo._host._name;
@@ -105,15 +113,14 @@ SL.sim = (function($) {
                 }
             }
         }
-        
         return neighbors;
     }
     
-    pub.dSwitch = function( name ) {
+    function SwitchDevice( name, conf ) {
         
         this._interfaces = [];
         
-        if( pub.isValidHostName( name ) ) {
+        if( isValidHostName( name ) && isUniqueHostName( name )) {
             this._name = name;
         } else {
             this._name = getUniqueHostName();
@@ -121,24 +128,34 @@ SL.sim = (function($) {
         
         this._MAC = getUniqueMAC();
         
-        this.getHostName = function() {
+        if( conf ) {
+            this._MAC = isValidMAC( conf.MAC ) ? conf.MAC : this._MAC;
+        }
+            
+
+    }
+    
+    SwitchDevice.prototype.getHostName
+        = function() {
             return this._name;
         };
         
-        this.getAvailableInterface = function() {
-            for( i = 0 ; i < this._interfaces.length ; i++ ) {
+    SwitchDevice.prototype.getAvailableInterface
+        = function() {
+            for( var i = 0 ; i < this._interfaces.length ; i++ ) {
                 // Reuse unplugged interfaces
                 if( !this._interfaces[i]._hasPhysLink ) {
                     return this._interfaces[i];
                 }
             }
             // All interfaces plugged in? Create a new one
-            var newInterface = new dInterface( this );
+            var newInterface = new NetInterface( this );
             this._interfaces.push( newInterface );
             return newInterface;
-        }
+        };
         
-        this.connectToHostName = function( destName ) {
+    SwitchDevice.prototype.connectToHostName
+        = function( destName ) {
             var srcInterface = this.getAvailableInterface();
             var dstDevice = _devices[destName];
             if( !dstDevice ) {
@@ -151,10 +168,9 @@ SL.sim = (function($) {
             srcInterface._hasPhysLink = true;
             dstInterface._hasPhysLink = true;
             return true;
-        }
-    };
+        };
     
-    function dInterface( parent, type ) {
+    function NetInterface( parent, type ) {
         this._host = parent;
         this._type = type ? type : "FAST_ETHERNET";
         this._name = _interfaceStrings[this._type] + parent._interfaces.length;
@@ -166,16 +182,15 @@ SL.sim = (function($) {
         return _devices[name];
     }
 
-    pub.addDevice = function( device ) {
+    function addDevice( device ) {
     
         _devices[ device._name ] = device;
-        _devices.length++;
     };
     
-    pub.getDeviceNames = function() {
+    function getDeviceNames() {
         var list = [];
         
-        for( device in _devices ) {
+        for( var device in _devices ) {
         
             if( device != 'length' ) {
                 list.push( device );
@@ -184,11 +199,43 @@ SL.sim = (function($) {
         return list;
     };
     
-    pub.getNeighbors = getNeighbors;
-    pub.getDeviceByHostName = getDeviceByHostName;
-    pub.isValidMAC = isValidMAC;
-    pub.isValidHostName = isValidHostName;
-    return pub;
+    function exportModel() {
+        var model = {};
+        
+        model.devices = _.cloneDeep( _devices );
+        
+        // Convert references to symbolic strings to avoid circular data
+        _.forEach( model.devices, function( o ) {
+            _.forEach( o._interfaces, function( i ) {
+                var remoteHost = i._linkedTo._host._name;
+                i._linkedTo = i._linkedTo._name + "." + remoteHost;
+            });
+        });
+
+        // Now that all interface references are converted, we can 
+        // delete convenience host references again to avoid recursion
+        _.forEach( model.devices, function( o ) {
+            _.forEach( o._interfaces, function( i ) {
+                delete i._host; 
+            });
+        });
+
+        return model;
+    }
     
-}(jQuery));
+    return {
+        // Public Classes
+        SwitchDevice:           SwitchDevice,
+
+        // Public Methods
+        exportModel:            exportModel,
+        addDevice:              addDevice,
+        getDeviceNames:         getDeviceNames,
+        getNeighbors:           getNeighbors,
+        getDeviceByHostName:    getDeviceByHostName,
+        isValidMAC:             isValidMAC,
+        isValidHostName:        isValidHostName
+    };
+    
+});
 

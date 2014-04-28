@@ -29,7 +29,7 @@ createjs.Graphics.prototype.dashedLine = function( x1 , y1 , x2 , y2 , dashLen )
  
     var dX = x2 - x1;
     var dY = y2 - y1;
-    var dashes = Math.floor(Math.sqrt( dX * dX + dY * dY ) / dashLen );
+    var dashes = Math.floor( Math.sqrt( dX * dX + dY * dY ) / dashLen );
     var dashX = dX / dashes;
     var dashY = dY / dashes;
  
@@ -43,17 +43,14 @@ createjs.Graphics.prototype.dashedLine = function( x1 , y1 , x2 , y2 , dashLen )
     return this;
 }
 
-var SL = (SL || {});
+app.factory( 'canvas', function( state, img, sim ) {
 
-SL.canvas = (function($) {
-
+    'use strict';
     var CANVAS_ID = "C";
     var NODE_RADIUS = 40;
     var INTERFACE_RADIUS = 8;
     var HIT_DISTANCE = 40;
-    
-    var pub = {};
-    
+
     var _canvas; 
     var _DC;    
     var _stage = {};
@@ -79,6 +76,13 @@ SL.canvas = (function($) {
         return { x: cx + r * Math.cos( a ), y: cy + r * Math.sin( a ) };
     }
     
+    function findPointOnLine( x1, y1, x2, y2, n ) {
+        d = Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+        r = n / d;
+
+        return { x: (r*x2 + (1-r) * x1), y: (r*y2 + (1-r) * y1) };
+    }
+    
     function findDistance( x1, y1, x2, y2 ) {
         return Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
     }
@@ -95,10 +99,8 @@ SL.canvas = (function($) {
         return ( value >= min && value <= max );
     }
     
-    
     function hitTestNodes( x, y ) {
-        var n;
-        for( n in _nodes ) {
+        for( var n in _nodes ) {
             if( testInCircle( x, y, _nodes[n].x, _nodes[n].y, HIT_DISTANCE )) {
                 return _nodes[n];
             }
@@ -118,19 +120,35 @@ SL.canvas = (function($) {
         }
     }
     
-    function clickBG( evt ) {
-        SL.main.handleClick( evt.stageX, evt.stageY );
+    function handleBGClick( evt ) {
+        /*
+        if( $("#"+_popups["switch"].id).is(':visible')) {
+            hidePopups();
+        }
+        else*/
+        if( state.get() == "add" ) {
+            newSwitch( { x: evt.stageX, y: evt.stageY } );
+            _dirty = true;
+        }
     }
+    
+    function newSwitch( pt )
+    {
+        var newSw = new sim.SwitchDevice( name );
+        sim.addDevice( newSw );
+       
+        var newNode = new Node( newSw.getHostName(), "switch", pt.x, pt.y );
+        addNode( newNode );
+    }; 
     
     function updateLinkCursor( on, x1, y1, x2, y2 ) {
     
         _linkCursor.graphics.clear();
-    
         if( on ) {
-            _linkCursor.graphics.setStrokeStyle(3, "round").beginStroke("green").dashedLine(x1, y1, x2, y2, 5).endStroke();
+            _linkCursor.graphics.setStrokeStyle(3, "round").beginStroke("green");
+            _linkCursor.graphics.dashedLine(x1, y1, x2, y2, 5).endStroke();
         }
         _dirty = true;
-        //console.log( "x2: "+x2 +" y2: "+y2 ); 
     }
     
     function updateLinks() {
@@ -139,34 +157,24 @@ SL.canvas = (function($) {
         var visitedList = [];
         
         if( _nodeCount >= 2 ) {
-            for( node in _nodes ) { 
+            for( var node in _nodes ) { 
                 drawLinksFrom( _nodes[node], visitedList );
                 visitedList[node] = true;
             }
         }
-
         _dirty = true;
     }    
 
     function drawLinksFrom( node, visitedList ) {
-    
-        var neighbors = SL.sim.getNeighbors( node.name );
-
+            
         var linkShape = new createjs.Shape();
         var srcBubbleShape = node.nodeBubbles;
 
-        var srcAngle;
-        var dstAngle;
         var srcPt;
         var dstPt;
-        var n_interfaces;
         
-        var bubble_angle;
-        var bubble_index;
-        var angleToNeighbor;
-        var bubblePt;
-                
-        srcBubbleShape.graphics.clear();
+        var nInterfaces;
+
         var bubbleList = [];
         var interfaceBubbleList = [];
         var angleStart;
@@ -174,35 +182,41 @@ SL.canvas = (function($) {
         var bubbleDistance;
         var bubbleBump;
         var collisionAngle;
-        var tempBump;
         var collision = false;
         var collideDistance = ((INTERFACE_RADIUS + 2) * 2 );
         
-        for( p in neighbors ) {
-            //console.log( "This would be a line from: " + node.name + " to: " + p );
+        srcBubbleShape.graphics.clear();
+        
+        var neighbors = sim.getNeighbors( node.name );
+        for( var p in neighbors ) {
             
             interfaceBubbleList.length = 0;
-            n_interfaces = neighbors[p].interfaces.length;
-            bubble_angle = Math.atan((INTERFACE_RADIUS+1) / ((NODE_RADIUS+1 + INTERFACE_RADIUS+1))) * 2;
-            angleToNeighbor = findAngleFromLine( node.x, node.y, _nodes[p].x, _nodes[p].y );
+            nInterfaces = neighbors[p].interfaces.length;
+            var bubbleSector = Math.atan((INTERFACE_RADIUS+1) / 
+                                ((NODE_RADIUS+1 + INTERFACE_RADIUS+1))) * 2;
+            var angleToNeighbor = findAngleFromLine( node.x, node.y, _nodes[p].x, _nodes[p].y );
             
-            bubble_index = ( n_interfaces - 1 ) / 2.0;
+            var bubbleIndex = ( nInterfaces - 1 ) / 2.0;
             
-            srcAngle = angleToNeighbor - ( bubble_index * bubble_angle );      
-            dstAngle = angleToNeighbor + ( bubble_index * bubble_angle ) + Math.PI;     
+            var srcAngle = angleToNeighbor - ( bubbleIndex * bubbleSector );      
+            var dstAngle = angleToNeighbor + ( bubbleIndex * bubbleSector ) + Math.PI;     
             
             // Draw bubbles for each interface connected to the current neighbor
-            for( i = 0; i < neighbors[p].interfaces.length; i++ ) {
+            for( var i = 0; i < neighbors[p].interfaces.length; i++ ) {
                 collision = false;
-                srcPt = findPointOnCircle( node.x, node.y, srcAngle, NODE_RADIUS+1 + INTERFACE_RADIUS );
+                srcPt = findPointOnCircle(  node.x, node.y, 
+                                            srcAngle, 
+                                            NODE_RADIUS+1 + INTERFACE_RADIUS );
 
                 // Collision check against previously drawn interface bubbles
                 var smallestDistance = collideDistance;
-                for( j = 0 ; j < bubbleList.length ; j++ ) {
+                for( var j = 0 ; j < bubbleList.length ; j++ ) {
                 
-                    bubbleDistance = findDistance( srcPt.x, srcPt.y, bubbleList[j].x, bubbleList[j].y );
+                    bubbleDistance = findDistance(  srcPt.x, srcPt.y,
+                                                    bubbleList[j].x, bubbleList[j].y );
 
-                    // We want to calculate the 'bump factor' with the closest bubble to avoid overlaps
+                    // We want to calculate the 'bump factor' against the closest bubble to 
+                    // avoid overlaps
                     if( bubbleDistance < collideDistance ) {
                         if( bubbleDistance < smallestDistance ) {
                             smallestDistance = bubbleDistance;
@@ -212,35 +226,45 @@ SL.canvas = (function($) {
                 }
 
                 // Push bubble up to avoid collision
-                
-                // The math here is probably dumb but I hacked at it until it basically worked.
                 var sinTerm = (1 - (smallestDistance / collideDistance)) * (Math.PI/2);
-                console.log( "d:" + bubbleDistance + " smallest:" + smallestDistance + " sin:" + sinTerm );
-                bubbleBump = NODE_RADIUS + 1 + INTERFACE_RADIUS + ( Math.abs( Math.sin( sinTerm )) * collideDistance );
+                // console.log( "d:" + bubbleDistance + " smallest:" + smallestDistance + " sin:" + sinTerm );
+                var bubbleBump = ( Math.abs( Math.sin( sinTerm )) * collideDistance );
 
-                srcPt = findPointOnCircle( node.x, node.y, srcAngle, bubbleBump );                
+                srcPt = findPointOnCircle(  node.x, node.y, 
+                                            srcAngle, 
+                                            NODE_RADIUS+1 + INTERFACE_RADIUS + bubbleBump );                
+                dstPt = findPointOnCircle(  _nodes[p].x, _nodes[p].y, 
+                                            dstAngle,
+                                            NODE_RADIUS+1 + INTERFACE_RADIUS );
                 
-                
-                dstPt = findPointOnCircle( _nodes[p].x, _nodes[p].y, dstAngle, NODE_RADIUS+1 + INTERFACE_RADIUS );
-                
-                bubblePt = srcBubbleShape.globalToLocal( srcPt.x, srcPt.y );
+                var srcPtLocal = srcBubbleShape.globalToLocal( srcPt.x, srcPt.y );
+                var dstPtLocal = srcBubbleShape.globalToLocal( dstPt.x, dstPt.y );
+                 
                 if( collision ) {
-                    srcBubbleShape.graphics.beginStroke("black").setStrokeStyle(1).beginFill("red");   
+                    srcBubbleShape.graphics
+                        .beginStroke("black").setStrokeStyle(1).beginFill("red");   
                 }
                 else {
-                    srcBubbleShape.graphics.beginStroke("black").setStrokeStyle(1).beginFill("white");
+                    srcBubbleShape.graphics
+                        .beginStroke("black").setStrokeStyle(1).beginFill("white");
                 }
-                srcBubbleShape.graphics.drawCircle( bubblePt.x, bubblePt.y, INTERFACE_RADIUS ).endFill().endStroke();
+                srcBubbleShape.graphics
+                    .drawCircle( srcPtLocal.x, srcPtLocal.y, INTERFACE_RADIUS )
+                    .endFill()
+                    .endStroke();
                 
                 if( !visitedList[p] ) {
                     // Don't draw segment lines twice
-                    linkShape.graphics.moveTo( srcPt.x, srcPt.y ).beginStroke("black").setStrokeStyle(2);
-                    linkShape.graphics.lineTo( dstPt.x, dstPt.y).endStroke();
+                    linkShape.graphics.moveTo( srcPt.x, srcPt.y )
+                        .beginStroke("black")
+                        .setStrokeStyle(2)
+                        .lineTo( dstPt.x, dstPt.y)
+                        .endStroke();
                 }
                 
-                interfaceBubbleList.push( { x: srcPt.x, y: srcPt.y } );
-                srcAngle += bubble_angle;
-                dstAngle -= bubble_angle;
+                interfaceBubbleList.push({ x: srcPt.x, y: srcPt.y });
+                srcAngle += bubbleSector;
+                dstAngle -= bubbleSector;
             }           
             
             bubbleList = bubbleList.concat( interfaceBubbleList );
@@ -248,16 +272,15 @@ SL.canvas = (function($) {
         _linkCntr.addChild( linkShape );
     }
     
-    pub.Node = function( name, icon, x, y ) {
+    function Node( name, icon, x, y ) {
 
-        // Pull this node into closure scope
-        var n = this;
+        var n = this; // Pull this node into closure scope
         this.name = name;
         this.icon = icon;
         this.x = x;
         this.y = y;
         
-        this.nodeImg = SL.main.getAsset(icon);
+        this.nodeImg = img.get(icon);
         var w = this.nodeImg.width;
         var h = this.nodeImg.height;
         this.nodeBmp = new createjs.Bitmap(this.nodeImg);
@@ -271,7 +294,10 @@ SL.canvas = (function($) {
         
         this.nodeCirc = new createjs.Shape();
         this.nodeCirc.graphics.beginStroke("black").setStrokeStyle(2).beginFill("white");
-        this.nodeCirc.graphics.drawCircle( this.nodeImg.width/2, this.nodeImg.height/2,NODE_RADIUS).endFill().endStroke();
+        this.nodeCirc.graphics.drawCircle(  this.nodeImg.width/2, 
+                                            this.nodeImg.height/2, 
+                                            NODE_RADIUS).endFill().endStroke();
+                                            
         this.nodeCirc.shadow = new createjs.Shadow("rgba(0,0,0,.5)", 3, 3, 15);
         
         this.nodeBubbles = new createjs.Shape();
@@ -292,12 +318,13 @@ SL.canvas = (function($) {
         this.nodeCntr.on( "pressup", function( evt ) {
             if( _dragging ) {
                 // We just stopped dragging....
-                var appState = SL.main.getMode();
+                var appState = state.get();
                 if(  appState == "link" ) {
-                    var endObj = _stage.getObjectUnderPoint( evt.stageX, evt.stageY );
+                
+                    var endObj = hitTestNodes( evt.stageX, evt.stageY );
                     if( endObj && endObj.name && endObj.name != name ) {
                         // Don't link a device to itself, that would be silly
-                        SL.sim.getDeviceByHostName( name ).connectToHostName( endObj.name );
+                        sim.getDeviceByHostName( name ).connectToHostName( endObj.name );
                         _dirtyLinks = true;
                     }
                 }
@@ -320,8 +347,11 @@ SL.canvas = (function($) {
             if( dist > 10 ) {
                 _dragging = true;
             }
+            if( !testInCircle( evt.stageX, evt.stageY, n.x, n.y, 10 ) ) {
+                _dragging = true;
+            }
             
-            var appState = SL.main.getMode();
+            var appState = state.get();
             if( _dragging ) {
             
                 if( appState == "add" || appState == "edit" ) {
@@ -335,6 +365,8 @@ SL.canvas = (function($) {
                 else if ( appState == "link" ) {
                 
                     var hit = hitTestNodes( evt.stageX, evt.stageY );
+                    
+                    // Snap the link cursor to the center of a node if we are dragging over it 
                     if( hit && hit != n ) {
                         updateLinkCursor( true, n.x, n.y, hit.x, hit.y );
                     } else {
@@ -367,7 +399,7 @@ SL.canvas = (function($) {
 
     }
     
-    pub.addNode = function( node ) {
+    function addNode( node ) {
         
         if( !node || !node.name || node.name.length < 1 ) {
             return;
@@ -382,19 +414,20 @@ SL.canvas = (function($) {
         _stage.addChild( node.nodeCntr );
     }   
     
-    pub.init = function(id) {
+    function init(id) {
+    
         _canvas = document.getElementById(id);
         _DC = _canvas.getContext("2d"); 
 
-        _stage = new createjs.Stage(_canvas);
+        _stage = new createjs.Stage( _canvas );
         _stage.enableMouseOver();
 
         // Draw sim background texture
         // This shape also serves as event handler for the sim workspace
         var bg = new createjs.Shape();
-        bg.graphics.beginStroke("#000").setStrokeStyle(1).beginBitmapFill(SL.main.getAsset("bg"));
+        bg.graphics.beginStroke("#000").setStrokeStyle(1).beginBitmapFill( img.get("bg") );
         bg.graphics.drawRect(0,0,_canvas.width-1.5, _canvas.height-1.5).endStroke().endFill();
-        bg.on( "click", clickBG );
+        bg.on( "click", handleBGClick );
 
         _stage.addChild( bg );
      
@@ -412,10 +445,43 @@ SL.canvas = (function($) {
         _stage.update();     
     }
     
-    pub.update = function() {
+    function importView( viewObject ) {
+        
+        _.forEach( viewObject.nodes, function( importNode ) {
+
+            var newNode = new Node( importNode.name, importNode.icon, importNode.x, importNode.y );
+            addNode( newNode );
+        });
+    }
+    
+    function exportView() {
+        var viewObject = {};
+        
+        viewObject.nodes = {};
+
+        for( var n in _nodes ) {
+            viewObject.nodes[n] = {};
+            viewObject.nodes[n].name  = _nodes[n].name;
+            viewObject.nodes[n].icon  = _nodes[n].icon;
+            viewObject.nodes[n].x     = _nodes[n].x;
+            viewObject.nodes[n].y     = _nodes[n].y;
+        }
+        return viewObject;
+    }
+    
+    function update() {
         _stage.update && _stage.update();       
     }
-
-    return pub;
-
-}(jQuery));
+    
+    return { 
+        // Public Classes
+        Node:       Node,
+        
+        // Public Methods
+        importView: importView,
+        exportView: exportView,
+        addNode:    addNode,
+        update:     update,
+        init:       init
+    };
+});

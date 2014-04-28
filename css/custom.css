@@ -28,6 +28,10 @@ html,body {
     padding:0;
 }
 
+h2 {
+    font-family: 'Oswald', 'sans-serif';
+}
+
 .alert-compact {
   margin: 5px;
   padding: 5px 5px;
@@ -76,16 +80,29 @@ input:invalid, textarea:invalid, select:invalid {
     left: 5px;
 }
 
+
+.btn-group .btn:active,
+.btn-group .btn:focus,
+.btn-group .btn.active {
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  background-color: #CCC;
+  -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.5);
+  text-shadow: 1px 1px #DDD;
+}
+
 .toolbarbutton {
     margin: 1px;
     border: 1px outset;
+    border-radius: 6px;
+    text-shadow: 1px 1px white;
 }
 
-.toolbarbutton:active,
-.toolbarbutton.active {
-  border: 1px transparent;
-  -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.5);
-  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.5);
+.btn-group .toolbarbutton .btn:active,
+.btn-group .toolbarbutton .btn:focus,
+.btn-group .toolbarbutton .btn.active {
+  background-color: red;
+  text-shadow: 1px 1px red;
 }
 
 
