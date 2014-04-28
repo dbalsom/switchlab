@@ -1,0 +1,12 @@
+{
+"version": "0.1",
+"debug": "on",
+"images":
+    [   { "name": "switch", "src": "img/switch.png" },
+        { "name": "bg", "src": "img/sim_bg.png" }
+    ],
+"diagrams":
+    [   { "name": "default", "src": "json/default.json" }
+    ]
+}
+
