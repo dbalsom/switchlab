@@ -35,10 +35,12 @@ app.factory( 'sim', function()
     'use strict';
     
     var _devices = {};
-    var _interfaceStrings = {
-            ETHERNET: "et0/",
-            FAST_ETHERNET: "fa0/",
-            GIG_ETHERNET: "gi0/"
+    var _interfaceTypes = {
+            et: "Ethernet",
+            fa: "FastEthernet",
+            gi: "GigabitEthernet",
+            lo: "Loopback",
+            tu: "Tunnel"
             };
     
     var MAC_OUI = "FCFFFF";
@@ -61,11 +63,17 @@ app.factory( 'sim', function()
         return mac;
     }
     
-    function getUniqueHostName() {
+    function getUniqueHostName( name ) {
+
         var hostName;
-        do { 
+
+        if( name && isValidHostName( name ) && isUniqueHostName( name )) {
+            hostName = name;
+        }
+        else do { 
             hostName = chance.city().toLowerCase();
         } while( !isValidHostName( hostName ) && !isUniqueHostName( hostName ));
+        
         return hostName;
     }
         
@@ -77,7 +85,7 @@ app.factory( 'sim', function()
         // Confirm exactly 12 hex digits and not already in use
         return mac.match( /[0-9A-F]{12}/ ) && !_globalMACTable[mac];
     }
-
+    
     function isUniqueHostName( testName ) {
         return ( !_devices[testName.toLowerCase()] );
     }
@@ -91,19 +99,37 @@ app.factory( 'sim', function()
         }
         return isValid;        
     }
-    
-    function getNeighbors( deviceName ) {
+      
+    function SwitchDevice( conf ) {
+        
+        this._interfaces = [];
+        var name = "";
+        
+        if( typeof conf == "string" ) {
+            this._name  = getUniqueHostName( conf );     
+            this._MAC   = getUniqueMAC();
+        }
+        else if( typeof conf == "object" ) {
+            this._name = getUniqueHostName( conf.name );
+            this._MAC  = isValidMAC( conf.MAC ) ? conf.MAC : this._MAC;
+        }
+    }
+
+    SwitchDevice.prototype.getHostName
+        = function() {
+            return this._name;
+        };
+
+    SwitchDevice.prototype.getNeighbors 
+        = function () {
     
         var neighbors = {};
-        var device = _devices[deviceName];
         var neighborName;
         
-        if( !device ) return [];
-        
-        for( var i = 0; i < device._interfaces.length; i++ ) {
-            if( device._interfaces[i]._hasPhysLink ) {
+        for( var i = 0; i < this._interfaces.length; i++ ) {
+            if( this._interfaces[i]._hasPhysLink ) {
                 
-                neighborName = device._interfaces[i]._linkedTo._host._name;
+                neighborName = this._interfaces[i]._linkedTo._host._name;
 
                 if( neighborName ) {
                     if( !neighbors[ neighborName ] ) {
@@ -116,33 +142,17 @@ app.factory( 'sim', function()
         return neighbors;
     }
     
-    function SwitchDevice( name, conf ) {
-        
-        this._interfaces = [];
-        
-        if( isValidHostName( name ) && isUniqueHostName( name )) {
-            this._name = name;
-        } else {
-            this._name = getUniqueHostName();
-        }
-        
-        this._MAC = getUniqueMAC();
-        
-        if( conf ) {
-            this._MAC = isValidMAC( conf.MAC ) ? conf.MAC : this._MAC;
-        }
+    SwitchDevice.prototype.addInterface
+        = function( newInterface ) {
             
-
-    }
-    
-    SwitchDevice.prototype.getHostName
-        = function() {
-            return this._name;
+            if( newInterface ) {
+                this._interfaces.push( newInterface );
+            }
         };
         
     SwitchDevice.prototype.getAvailableInterface
         = function() {
-            for( var i = 0 ; i < this._interfaces.length ; i++ ) {
+            for( var i = 0; i < this._interfaces.length; i++ ) {
                 // Reuse unplugged interfaces
                 if( !this._interfaces[i]._hasPhysLink ) {
                     return this._interfaces[i];
@@ -154,37 +164,76 @@ app.factory( 'sim', function()
             return newInterface;
         };
         
+    SwitchDevice.prototype.getInterface
+        = function( name ) {
+        
+            for( var i = 0; i < this._interfaces.length; i++ ) {
+                if( this._interfaces[i]._name == name ) {
+                    return this._interfaces[i];
+                }
+            }
+            return null;
+        };
+        
     SwitchDevice.prototype.connectToHostName
-        = function( destName ) {
+        = function( dstName, dstInterfaceName ) {
             var srcInterface = this.getAvailableInterface();
-            var dstDevice = _devices[destName];
+            var dstDevice = _devices[dstName];
             if( !dstDevice ) {
                 return false;
             }
-            var dstInterface = dstDevice.getAvailableInterface();
             
-            srcInterface._linkedTo = dstInterface;
-            dstInterface._linkedTo = srcInterface;
-            srcInterface._hasPhysLink = true;
-            dstInterface._hasPhysLink = true;
+            var dstInterface = null;
+            if( dstInterfaceName ) {
+                dstInterface = dstDevice.getInterface( dstInterfaceName );
+                if( !dstInterface ) {
+                    return false;
+                }
+            }
+            else { 
+                dstInterface = dstDevice.getAvailableInterface();
+            }
+            
+            srcInterface.connectTo( dstInterface );
             return true;
         };
-    
-    function NetInterface( parent, type ) {
-        this._host = parent;
-        this._type = type ? type : "FAST_ETHERNET";
-        this._name = _interfaceStrings[this._type] + parent._interfaces.length;
-        this._hasPhysLink = false;
-        this._linkedTo = null;
-    }
     
     function getDeviceByHostName( name ) {
         return _devices[name];
     }
-
-    function addDevice( device ) {
     
+    function addDevice( device ) {
         _devices[ device._name ] = device;
+    };
+
+    function NetInterface( parent, name ) {
+    
+        this._host = parent;
+        
+        var validName = name && name.match( /^(et|fa|gi)[0-9]([/][0-9])+/i );
+        if( validName ) {
+            // Constructor has been requested to create the specific interface name
+            
+            this._type = name.substr(0, 2);
+            this._name = name;
+        }
+        else {
+            // Just construct a new default interface
+            this._type = "fa";
+            // Eventually we might want module numbers other than 0, but for now, fake it
+            this._name = "fa" + "0/" + parent._interfaces.length;
+        }    
+        this._hasPhysLink = false;
+        this._linkedTo = null;
+    }
+    
+    NetInterface.prototype.connectTo
+        = function( dstInterface ) {
+     
+        this._linkedTo            = dstInterface;
+        dstInterface._linkedTo    = this;
+        this._hasPhysLink         = true;
+        dstInterface._hasPhysLink = true;
     };
     
     function getDeviceNames() {
@@ -199,6 +248,50 @@ app.factory( 'sim', function()
         return list;
     };
     
+    function importModel( modelObject ) {
+
+        // Import pass #1. Create devices and interfaces
+        _.forEach( modelObject.devices, function( importDevice ) {
+            var conf = { 
+                name: importDevice._name,
+                MAC:  importDevice._MAC
+            }
+            
+            var newDev = new SwitchDevice( conf );
+            addDevice( newDev );
+            _.forEach( importDevice._interfaces, function( importInterface ) {
+                
+                var newInterface = new NetInterface( newDev, importInterface._name );
+                
+                newDev.addInterface( newInterface );
+            });
+        });
+        
+        //Import pass #2. Now that interfaces are created, connect them up
+        _.forEach( modelObject.devices, function( importDevice ) {
+        
+            var srcDev = getDeviceByHostName( importDevice._name );
+            _.forEach( importDevice._interfaces, function( importInterface ) {
+                if( importInterface._hasPhysLink && importInterface._linkedTo ) {
+                    
+                    var srcInt = srcDev.getInterface( importInterface._name );
+                    
+                    var dstArgs = importInterface._linkedTo.split('.');
+                    if( dstArgs.length == 2 ) {
+                        var dstDevName = dstArgs[1];
+                        var dstIntName = dstArgs[0];
+                        
+                        var dstDev = getDeviceByHostName( dstDevName );
+                        var dstInt = dstDev.getInterface( dstIntName );
+                        
+                        srcInt.connectTo( dstInt );
+                    }
+                }
+            });
+        });
+        console.log( _devices );
+    }
+    
     function exportModel() {
         var model = {};
         
@@ -207,8 +300,11 @@ app.factory( 'sim', function()
         // Convert references to symbolic strings to avoid circular data
         _.forEach( model.devices, function( o ) {
             _.forEach( o._interfaces, function( i ) {
-                var remoteHost = i._linkedTo._host._name;
-                i._linkedTo = i._linkedTo._name + "." + remoteHost;
+            
+                if( i._hasPhysLink && i.linkedTo ) {
+                    var remoteHost = i._linkedTo._host._name;
+                    i._linkedTo = i._linkedTo._name + "." + remoteHost;
+                }
             });
         });
 
@@ -229,9 +325,9 @@ app.factory( 'sim', function()
 
         // Public Methods
         exportModel:            exportModel,
+        importModel:            importModel,
         addDevice:              addDevice,
         getDeviceNames:         getDeviceNames,
-        getNeighbors:           getNeighbors,
         getDeviceByHostName:    getDeviceByHostName,
         isValidMAC:             isValidMAC,
         isValidHostName:        isValidHostName

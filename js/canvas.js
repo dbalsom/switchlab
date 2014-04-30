@@ -109,7 +109,6 @@ app.factory( 'canvas', function( state, img, sim ) {
     }
     
     function handleTick( evt ) {
-        
         if( _dirtyLinks ) {
             updateLinks();
             _dirtyLinks = false;
@@ -117,7 +116,7 @@ app.factory( 'canvas', function( state, img, sim ) {
         if( _dirty ) {
             _stage.update( evt );
             _dirty = false;
-        }
+        }  
     }
     
     function handleBGClick( evt ) {
@@ -187,7 +186,11 @@ app.factory( 'canvas', function( state, img, sim ) {
         
         srcBubbleShape.graphics.clear();
         
-        var neighbors = sim.getNeighbors( node.name );
+        var device = sim.getDeviceByHostName( node.name );
+        if( !device ) return;
+        
+        var neighbors = device.getNeighbors();
+        
         for( var p in neighbors ) {
             
             interfaceBubbleList.length = 0;
@@ -442,7 +445,7 @@ app.factory( 'canvas', function( state, img, sim ) {
         
         createjs.Ticker.addEventListener( "tick", handleTick );
 
-        _stage.update();     
+        update( true );     
     }
     
     function importView( viewObject ) {
@@ -470,7 +473,8 @@ app.factory( 'canvas', function( state, img, sim ) {
     }
     
     function update() {
-        _stage.update && _stage.update();       
+        _dirty      = true;
+        _dirtyLinks = true;
     }
     
     return { 

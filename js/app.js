@@ -25,26 +25,41 @@ THE SOFTWARE.
 
 var app = angular.module('SLApp', ['ui.bootstrap', 'ui.mask']);
 
-app.run( function( main, img, canvas, $http ) 
+app.run( function( main, img, canvas, $http, _import ) 
 {
     /* The JSON manifest file tells us what images to load, what diagrams are available, 
      * and other global settings
      */
-    $http({method: 'GET', url: './json/manifest.json'}).
-        then( function( response ) {
-            /* loadImages returns a promise resolved when all images are loaded. */
+     var data = {};
+     
+    $http({method: 'GET', url: './json/manifest.json'})
+        .then( function( response ) {
+            data = response.data;
+            // loadImages returns a promise resolved when all images are loaded.
             return img.loadImages( response.data.images );
+            
         }, function( response ) {
             alert("Failed to load manifest, status: " + response.status );
-        }).
-        then( function( nImages ) { 
+        })
+        .then( function( nImages ) { 
+            // Images preloaded OK
             console.log( "Loaded " + nImages + " images." );
+            
             canvas.init("C");
+            main.init();        
+        
+            _.forEach( data.diagrams, function( d ) {
+
+                if( d.name == "default" ) {
+                    _import.fromJSONResource( d.src );
+                    return false;
+                }
+            });
         }, function( err ) {
             alert( "Couldn't load image: " + err );
         });
 
-    main.init();
+
 });
 
 /* Image service
@@ -153,21 +168,30 @@ app.factory( 'state', function()
     };
 });
 
-app.factory( '_import', function( canvas, sim ) 
+app.factory( '_import', function( canvas, sim, $http ) 
 {
     'use strict';
     function fromJSON( jsObj ) {
-        _.forEach( jsObj.devices, function( device ) {
-            
-            _.forEach( device._interfaces, function( _interface ) {
-                
-            
-            
+   
+        sim.importModel( jsObj );
+        canvas.importView( jsObj );
+        canvas.update();
+    }
+    
+    function fromJSONResource( path ) {
+
+        $http({method: 'GET', url: path })
+            .success(function(data, status, headers, config) {
+                fromJSON( data );
+            })
+            .error(function(data, status, headers, config) {
+
             });
-        });
+    
     }
     return {
-        fromJSON: fromJSON
+        fromJSON:           fromJSON,
+        fromJSONResource:   fromJSONResource
     }
 });
 
