@@ -1,0 +1,150 @@
+{
+  "devices": {
+    "houston": {
+      "_interfaces": [
+        {
+          "_type": "fa",
+          "_name": "fa0/0",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/0.boston"
+        },
+        {
+          "_type": "fa",
+          "_name": "fa0/1",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/0.orlando"
+        },
+        {
+          "_type": "fa",
+          "_name": "fa0/2",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/2.boston"
+        },
+        {
+          "_type": "fa",
+          "_name": "fa0/3",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/2.orlando"
+        }
+      ],
+      "_name": "houston",
+      "_MAC": "FCFFFF000001"
+    },
+    "boston": {
+      "_interfaces": [
+        {
+          "_type": "fa",
+          "_name": "fa0/0",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/0.houston"
+        },
+        {
+          "_type": "fa",
+          "_name": "fa0/1",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/1.atlanta"
+        },
+        {
+          "_type": "fa",
+          "_name": "fa0/2",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/2.houston"
+        },
+        {
+          "_type": "fa",
+          "_name": "fa0/3",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/3.atlanta"
+        }
+      ],
+      "_name": "boston",
+      "_MAC": "FCFFFF000002"
+    },
+    "orlando": {
+      "_interfaces": [
+        {
+          "_type": "fa",
+          "_name": "fa0/0",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/1.houston"
+        },
+        {
+          "_type": "fa",
+          "_name": "fa0/1",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/0.atlanta"
+        },
+        {
+          "_type": "fa",
+          "_name": "fa0/2",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/3.houston"
+        },
+        {
+          "_type": "fa",
+          "_name": "fa0/3",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/2.atlanta"
+        }
+      ],
+      "_name": "orlando",
+      "_MAC": "FCFFFF000003"
+    },
+    "atlanta": {
+      "_interfaces": [
+        {
+          "_type": "fa",
+          "_name": "fa0/0",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/1.orlando"
+        },
+        {
+          "_type": "fa",
+          "_name": "fa0/1",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/1.boston"
+        },
+        {
+          "_type": "fa",
+          "_name": "fa0/2",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/3.orlando"
+        },
+        {
+          "_type": "fa",
+          "_name": "fa0/3",
+          "_hasPhysLink": true,
+          "_linkedTo": "fa0/3.boston"
+        }
+      ],
+      "_name": "atlanta",
+      "_MAC": "FCFFFF000004"
+    }
+  },
+  "nodes": {
+    "houston": {
+      "name": "houston",
+      "icon": "switch",
+      "x": 420,
+      "y": 168
+    },
+    "boston": {
+      "name": "boston",
+      "icon": "switch",
+      "x": 775,
+      "y": 167
+    },
+    "orlando": {
+      "name": "orlando",
+      "icon": "switch",
+      "x": 420,
+      "y": 467
+    },
+    "atlanta": {
+      "name": "atlanta",
+      "icon": "switch",
+      "x": 775,
+      "y": 466
+    }
+  }
+} 
