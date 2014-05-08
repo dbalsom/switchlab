@@ -5,9 +5,8 @@
 }
 
 .bodyDiv {
-    
     background-image: url('img/window_bg.png');
-    margin: 0 auto;
+    margin: auto auto;
     padding: 0 20px;
 }
 
@@ -21,6 +20,11 @@
     cursor: default; /* Avoid text caret when dragging on canvas */
     position: relative; /* Allow child popups inside */
     padding: 0px;
+    margin: 0px;
+}
+
+.sim-canvas {
+    display: block;
 }
     
 html,body {
@@ -28,7 +32,7 @@ html,body {
     padding:0;
 }
 
-h2 {
+h1, h2, h3 {
     font-family: 'Oswald', 'sans-serif';
 }
 
@@ -80,9 +84,8 @@ input:invalid, textarea:invalid, select:invalid {
     left: 5px;
 }
 
-
+/*.btn-group .btn:focus,*/
 .btn-group .btn:active,
-.btn-group .btn:focus,
 .btn-group .btn.active {
   border: 1px solid rgba(0, 0, 0, 0.5);
   background-color: #CCC;
@@ -95,24 +98,80 @@ input:invalid, textarea:invalid, select:invalid {
     margin: 1px;
     border: 1px outset;
     border-radius: 6px;
-    text-shadow: 1px 1px 0px white;
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+    
+    background-image: -webkit-gradient(
+      linear,
+      left top,
+      left bottom,
+      color-stop(0.05, #EEEEEE),
+      color-stop(0.33, #DDDDDD),
+      color-stop(0.66, #CCCCCC),
+      color-stop(1, #AAAAAA)
+    );
+    background-image: -o-linear-gradient(bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
+    background-image: -moz-linear-gradient(bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
+    background-image: -webkit-linear-gradient(bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
+    background-image: -ms-linear-gradient(bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
+    background-image: linear-gradient(to bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
 }
 
-.btn-group .toolbarbutton .btn:active,
-.btn-group .toolbarbutton .btn:focus,
-.btn-group .toolbarbutton .btn.active {
-  background-color: red;
-  text-shadow: 1px 1px red;
+/*
+ *  Workspace Modal Popups  
+ *  -----------------------------------------------------------------------------------------------
+ */
+.workspace-modal-backdrop,
+.workspace-modal {
+    position: absolute; /* Confine popup stack to workspace div */
+    overflow: hidden;
+    overflow-y: hidden;
 }
 
+.workspace-modal .modal-footer {
+    overflow: hidden;
+    padding: 10px;
+    background-clip: padding-box;  
+    -moz-background-clip: padding;  
+    -webkit-background-clip: padding;
+    background-image: url('img/squared_metal.png');   
+    -webkit-border-bottom-left-radius: 6px;
+    -webkit-border-bottom-right-radius: 6px;
+}
 
-.tabContainer {
-  padding: 8px 8px;
+h3 .glyphicon {
+    margin: 20px;
 }
 
 .popupTable {
   margin-bottom: 0px;
   margin:0px;
+}
+
+/* Messagebox modal */
+.msgbox-icon {
+  margin-left:20px;
+  margin-right:20px;
+  font-size: 30px;
+  float: left;
+}
+
+.msgbox-title {
+  margin-top: 22px;
+  display: inline;
+}
+
+/*
+ *  CONSOLE TABS  
+ *  -----------------------------------------------------------------------------------------------
+ */
+
+/* <div> container for console tabs */
+#tabs {
+  margin-top: 10px; /* Put some space between workspace div and tabs */
+}
+
+.tabContainer {
+  padding: 8px 8px; /* Inner padding inside active tab */
 }
 
 .tab-content > .active {
@@ -123,7 +182,9 @@ input:invalid, textarea:invalid, select:invalid {
   background-color:white;
 }
 
-.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus {
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
   border: 1px solid LightSlateGray;
   border-bottom: 1px solid transparent;
 

@@ -23,14 +23,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-var U = (U || {});
+var u = (u || {});
 
-U = (function($) {
-
-    var pub = {};
+u = (function($) {
 
     // Craig Buckler http://www.sitepoint.com/javascript-generate-lighter-darker-color/
-    pub.ColorLuminance = function(hex, lum) {
+    function ColorLuminance(hex, lum) {
 
         // validate hex string
         hex = String(hex).replace(/[^0-9a-f]/gi, '');
@@ -49,6 +47,44 @@ U = (function($) {
         return rgb;
     }
 
-    return pub;
+    function findAngleFromLine( x1, y1, x2, y2 ) {
+        return Math.atan2( y2-y1, x2-x1 );        
+    }
+    
+    function findPointOnCircle( cx, cy, a, r ) {
+        return { x: cx + r * Math.cos( a ), y: cy + r * Math.sin( a ) };
+    }
+    
+    function findPointOnLine( x1, y1, x2, y2, n ) {
+        d = Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+        r = n / d;
+        return { x: (r*x2 + (1-r) * x1), y: (r*y2 + (1-r) * y1) };
+    }
+    
+    function findDistance( x1, y1, x2, y2 ) {
+        return Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+    }
+    
+    function testInCircle( pt_x, pt_y, cx, cy, r ) {
+        var b = ((r*r) > ((cx-pt_x) * (cx-pt_x) + (cy-pt_y) * (cy-pt_y))) ? true:false;
+        return b;
+    }
+    
+    function isBetween( value, amin, amax ) {
+        var min = amin < amax ? amin : amax;
+        var max = amax > amin ? amax : amin;
+        
+        return ( value >= min && value <= max );
+    }    
+    
+    return {
+        ColorLuminance:     ColorLuminance,
+        findAngleFromLine:  findAngleFromLine,
+        findPointOnCircle:  findPointOnCircle,
+        findPointOnLine:    findPointOnLine,
+        findDistance:       findDistance,
+        testInCircle:       testInCircle,
+        isBetween:          isBetween
+    };
 
 }(jQuery));

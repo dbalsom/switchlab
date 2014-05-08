@@ -23,7 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-var app = angular.module('SLApp', ['ui.bootstrap', 'ui.mask']);
+var app = angular.module('SLApp', ['ui.bootstrap', 'ui.mask', 'workspace_modal']);
 
 app.run( function( main, img, canvas, $http, _import ) 
 {

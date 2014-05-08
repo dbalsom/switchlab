@@ -132,13 +132,13 @@
       "name": "boston",
       "icon": "switch",
       "x": 775,
-      "y": 167
+      "y": 168
     },
     "orlando": {
       "name": "orlando",
       "icon": "switch",
       "x": 420,
-      "y": 467
+      "y": 466
     },
     "atlanta": {
       "name": "atlanta",

@@ -164,8 +164,7 @@ app.factory( 'sim', function()
             return newInterface;
         };
         
-    SwitchDevice.prototype.getInterface
-        = function( name ) {
+    SwitchDevice.prototype.getInterface = function( name ) {
         
             for( var i = 0; i < this._interfaces.length; i++ ) {
                 if( this._interfaces[i]._name == name ) {
@@ -175,8 +174,7 @@ app.factory( 'sim', function()
             return null;
         };
         
-    SwitchDevice.prototype.connectToHostName
-        = function( dstName, dstInterfaceName ) {
+    SwitchDevice.prototype.connectToHostName = function( dstName, dstInterfaceName ) {
             var srcInterface = this.getAvailableInterface();
             var dstDevice = _devices[dstName];
             if( !dstDevice ) {
@@ -198,6 +196,14 @@ app.factory( 'sim', function()
             return true;
         };
     
+    SwitchDevice.prototype.destroy = function() {
+        
+        _.forEach( this._interfaces, function( i ) {
+            i.disconnect();
+            i.destroy();
+        });
+    };
+    
     function getDeviceByHostName( name ) {
         return _devices[name];
     }
@@ -206,6 +212,21 @@ app.factory( 'sim', function()
         _devices[ device._name ] = device;
     };
 
+    function deleteDevice( device ) {
+        var devName;
+        if( typeof device == 'string' ) {
+            devName = device;
+        }
+        else {
+            devName = device._name;
+        }
+        
+        if( _devices[ devName ] ) { 
+            _devices[ devName ].destroy();
+            delete _devices[ devName ];
+        }
+    }
+    
     function NetInterface( parent, name ) {
     
         this._host = parent;
@@ -227,15 +248,29 @@ app.factory( 'sim', function()
         this._linkedTo = null;
     }
     
-    NetInterface.prototype.connectTo
-        = function( dstInterface ) {
+    NetInterface.prototype.connectTo = function( dstInterface ) {
      
         this._linkedTo            = dstInterface;
         dstInterface._linkedTo    = this;
         this._hasPhysLink         = true;
         dstInterface._hasPhysLink = true;
     };
+  
+    NetInterface.prototype.disconnect = function() {
+     
+        if( this._linkedTo ) {
+            this._linkedTo._linkedTo    = null;
+            this._linkedTo._hasPhysLink = false;
+        }
+        this._linkedTo      = null;
+        this._hasPhysLink   = false;
+    };
     
+    NetInterface.prototype.destroy = function() {
+        this.disconnect();
+        this._host = null;
+    }
+  
     function getDeviceNames() {
         var list = [];
         
@@ -289,7 +324,7 @@ app.factory( 'sim', function()
                 }
             });
         });
-        console.log( _devices );
+        //console.log( _devices );
     }
     
     function exportModel() {
@@ -301,7 +336,7 @@ app.factory( 'sim', function()
         _.forEach( model.devices, function( o ) {
             _.forEach( o._interfaces, function( i ) {
             
-                if( i._hasPhysLink && i.linkedTo ) {
+                if( i._hasPhysLink && i._linkedTo ) {
                     var remoteHost = i._linkedTo._host._name;
                     i._linkedTo = i._linkedTo._name + "." + remoteHost;
                 }
@@ -319,6 +354,13 @@ app.factory( 'sim', function()
         return model;
     }
     
+    function reset() {
+        _.forEach( _devices, function( d ) {
+            d.destroy();
+            delete _devices.d;
+        });
+    }
+    
     return {
         // Public Classes
         SwitchDevice:           SwitchDevice,
@@ -327,10 +369,12 @@ app.factory( 'sim', function()
         exportModel:            exportModel,
         importModel:            importModel,
         addDevice:              addDevice,
+        deleteDevice:           deleteDevice,
         getDeviceNames:         getDeviceNames,
         getDeviceByHostName:    getDeviceByHostName,
         isValidMAC:             isValidMAC,
-        isValidHostName:        isValidHostName
+        isValidHostName:        isValidHostName,
+        reset:                  reset
     };
     
 });

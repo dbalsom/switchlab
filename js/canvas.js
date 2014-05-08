@@ -43,7 +43,45 @@ createjs.Graphics.prototype.dashedLine = function( x1 , y1 , x2 , y2 , dashLen )
     return this;
 }
 
-app.factory( 'canvas', function( state, img, sim ) {
+
+// Mouse state class, giving a persistent state from mouse events.
+app.factory( 'mouse', function() {
+
+    var _startPt = { x: 0, y: 0 };
+    var _curPt = { x: 0, y: 0 };
+    var _isDragging = false;
+    var _isDown = false;
+    
+    function getStartPt() { return _startPt; }
+        
+    function up() { _isDown = false; _isDragging = false; }
+    function down( x, y ) {
+        _startPt.x = x;
+        _startPt.y = y;
+        _isDown = true;
+    }
+    
+    function move( x, y ) {
+        _curPt.x = x, _curPt.y = y;
+        
+        if( !u.testInCircle( x, y, _startPt.x, _startPt.y, 10 ) ) {
+            _isDragging = true;
+            
+        }
+    }
+
+    function isDragging() { return _isDragging; }
+
+    return {
+        getStartPt: getStartPt,
+        up:         up,
+        down:       down,
+        move:       move,
+        isDragging: isDragging
+    };
+});
+
+app.factory( 'canvas', function( state, img, sim, mouse ) {
 
     'use strict';
     var CANVAS_ID = "C";
@@ -68,40 +106,11 @@ app.factory( 'canvas', function( state, img, sim ) {
     
     var _dragging = false;
 
-    function findAngleFromLine( x1, y1, x2, y2 ) {
-        return Math.atan2( y2-y1, x2-x1 );        
-    }
-    
-    function findPointOnCircle( cx, cy, a, r ) {
-        return { x: cx + r * Math.cos( a ), y: cy + r * Math.sin( a ) };
-    }
-    
-    function findPointOnLine( x1, y1, x2, y2, n ) {
-        d = Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
-        r = n / d;
 
-        return { x: (r*x2 + (1-r) * x1), y: (r*y2 + (1-r) * y1) };
-    }
-    
-    function findDistance( x1, y1, x2, y2 ) {
-        return Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
-    }
-    
-    function testInCircle( pt_x, pt_y, cx, cy, r ) {
-        var b = ((r*r) > ((cx-pt_x) * (cx-pt_x) + (cy-pt_y) * (cy-pt_y))) ? true:false;
-        return b;
-    }
-    
-    function isBetween( value, amin, amax ) {
-        var min = amin < amax ? amin : amax;
-        var max = amax > amin ? amax : amin;
-        
-        return ( value >= min && value <= max );
-    }
     
     function hitTestNodes( x, y ) {
         for( var n in _nodes ) {
-            if( testInCircle( x, y, _nodes[n].x, _nodes[n].y, HIT_DISTANCE )) {
+            if( u.testInCircle( x, y, _nodes[n].x, _nodes[n].y, HIT_DISTANCE )) {
                 return _nodes[n];
             }
         }
@@ -197,7 +206,7 @@ app.factory( 'canvas', function( state, img, sim ) {
             nInterfaces = neighbors[p].interfaces.length;
             var bubbleSector = Math.atan((INTERFACE_RADIUS+1) / 
                                 ((NODE_RADIUS+1 + INTERFACE_RADIUS+1))) * 2;
-            var angleToNeighbor = findAngleFromLine( node.x, node.y, _nodes[p].x, _nodes[p].y );
+            var angleToNeighbor = u.findAngleFromLine( node.x, node.y, _nodes[p].x, _nodes[p].y );
             
             var bubbleIndex = ( nInterfaces - 1 ) / 2.0;
             
@@ -207,16 +216,16 @@ app.factory( 'canvas', function( state, img, sim ) {
             // Draw bubbles for each interface connected to the current neighbor
             for( var i = 0; i < neighbors[p].interfaces.length; i++ ) {
                 collision = false;
-                srcPt = findPointOnCircle(  node.x, node.y, 
-                                            srcAngle, 
-                                            NODE_RADIUS+1 + INTERFACE_RADIUS );
+                srcPt = u.findPointOnCircle(    node.x, node.y, 
+                                                srcAngle, 
+                                                NODE_RADIUS+1 + INTERFACE_RADIUS );
 
                 // Collision check against previously drawn interface bubbles
                 var smallestDistance = collideDistance;
                 for( var j = 0 ; j < bubbleList.length ; j++ ) {
                 
-                    bubbleDistance = findDistance(  srcPt.x, srcPt.y,
-                                                    bubbleList[j].x, bubbleList[j].y );
+                    bubbleDistance = u.findDistance(    srcPt.x, srcPt.y,
+                                                        bubbleList[j].x, bubbleList[j].y );
 
                     // We want to calculate the 'bump factor' against the closest bubble to 
                     // avoid overlaps
@@ -233,12 +242,12 @@ app.factory( 'canvas', function( state, img, sim ) {
                 // console.log( "d:" + bubbleDistance + " smallest:" + smallestDistance + " sin:" + sinTerm );
                 var bubbleBump = ( Math.abs( Math.sin( sinTerm )) * collideDistance );
 
-                srcPt = findPointOnCircle(  node.x, node.y, 
-                                            srcAngle, 
-                                            NODE_RADIUS+1 + INTERFACE_RADIUS + bubbleBump );                
-                dstPt = findPointOnCircle(  _nodes[p].x, _nodes[p].y, 
-                                            dstAngle,
-                                            NODE_RADIUS+1 + INTERFACE_RADIUS );
+                srcPt = u.findPointOnCircle(    node.x, node.y, 
+                                                srcAngle, 
+                                                NODE_RADIUS+1 + INTERFACE_RADIUS + bubbleBump );                
+                dstPt = u.findPointOnCircle(    _nodes[p].x, _nodes[p].y, 
+                                                dstAngle,
+                                                NODE_RADIUS+1 + INTERFACE_RADIUS );
                 
                 var srcPtLocal = srcBubbleShape.globalToLocal( srcPt.x, srcPt.y );
                 var dstPtLocal = srcBubbleShape.globalToLocal( dstPt.x, dstPt.y );
@@ -316,46 +325,38 @@ app.factory( 'canvas', function( state, img, sim ) {
         this.nodeCntr.x = this.x - this.nodeImg.width / 2 + 0.5;
         this.nodeCntr.y = this.y - this.nodeImg.height / 2 + 0.5;        
         
-        _dragging = false;
-
         this.nodeCntr.on( "pressup", function( evt ) {
-            if( _dragging ) {
-                // We just stopped dragging....
-                var appState = state.get();
-                if(  appState == "link" ) {
+            if( mouse.isDragging() ) {
                 
+                if( state.get() == "link" ) {
+                    // We just stopped dragging in link mode, so check if we stopped at another 
+                    // node. But don't link a node to itself, that would be silly.
                     var endObj = hitTestNodes( evt.stageX, evt.stageY );
+                    
                     if( endObj && endObj.name && endObj.name != name ) {
-                        // Don't link a device to itself, that would be silly
                         sim.getDeviceByHostName( name ).connectToHostName( endObj.name );
                         _dirtyLinks = true;
                     }
                 }
             }
             updateLinkCursor( false );
-            _dragging = false;
+            mouse.up();
         });
         
         this.nodeCntr.on( "mousedown", function( evt ) 
         {
-            _dragging = false;
+            mouse.down( evt.stageX, evt.stageY );
             _selectedNode = this;
            // hidePopups();
         });
         
         this.nodeCntr.on( "pressmove", function( evt ) {
-            var dist = findDistance( n.x, n.y, evt.stageX, evt.stageY );
             // Only start dragging a node after the cursor moves a set distance
             // Otherwise intended clicks are often interpreted as tiny drags
-            if( dist > 10 ) {
-                _dragging = true;
-            }
-            if( !testInCircle( evt.stageX, evt.stageY, n.x, n.y, 10 ) ) {
-                _dragging = true;
-            }
-            
+            mouse.move( evt.stageX, evt.stageY );
+                        
             var appState = state.get();
-            if( _dragging ) {
+            if( mouse.isDragging() ) {
             
                 if( appState == "add" || appState == "edit" ) {
                     n.nodeCntr.x = evt.stageX - w / 2 + 0.5;
@@ -365,7 +366,7 @@ app.factory( 'canvas', function( state, img, sim ) {
                     _dirtyLinks = true; 
                     _dirty = true;
                 }
-                else if ( appState == "link" ) {
+                else if( appState == "link" ) {
                 
                     var hit = hitTestNodes( evt.stageX, evt.stageY );
                     
@@ -382,8 +383,16 @@ app.factory( 'canvas', function( state, img, sim ) {
         
         this.nodeCntr.on( "click", function( evt ) {
             // We get 'click' events on mouse-up, regardless of dragging status
-            if( !_dragging ) {
+            if( !mouse.isDragging() ) {
                 // We were not dragging, so this is a legitimate click
+                if( state.get() == "del" ) {
+                    sim.deleteDevice( n.name )
+                    deleteNode( n );
+                    _dirty = true;
+                    _dirtyLinks = true;
+                    console.log("BAHLEETED!");
+                }
+                
                 var pt;
                 var pt2 = {};
                 var offset = $("#"+CANVAS_ID).offset();
@@ -397,14 +406,23 @@ app.factory( 'canvas', function( state, img, sim ) {
                 showPopup( "switch", pt2 );
                 */
             }
+            mouse.up();
         });
         
 
     }
     
+    Node.prototype.destroy = function () {
+        
+        this.nodeCntr.removeChild( this.nodeCirc );
+        this.nodeCntr.removeChild( this.nodeBubbles );
+        this.nodeCntr.removeChild( this.nodeBmp );
+        this.nodeCntr.removeChild( this.nodeTxt );        
+    }
+    
     function addNode( node ) {
         
-        if( !node || !node.name || node.name.length < 1 ) {
+        if( !node || !node.name ) {
             return;
         }
         if( _nodes[node.name] ) {
@@ -416,6 +434,14 @@ app.factory( 'canvas', function( state, img, sim ) {
         
         _stage.addChild( node.nodeCntr );
     }   
+    
+    function deleteNode( node ) {
+    
+        node.destroy();
+        _stage.removeChild( node.nodeCntr );
+        delete _nodes[node.name];
+
+    }
     
     function init(id) {
     
@@ -485,6 +511,7 @@ app.factory( 'canvas', function( state, img, sim ) {
         importView: importView,
         exportView: exportView,
         addNode:    addNode,
+        deleteNode: deleteNode,
         update:     update,
         init:       init
     };

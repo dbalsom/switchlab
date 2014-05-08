@@ -35,40 +35,15 @@
   
   <div class="bodyDiv">
   
-    <div class="contentDiv"  ng-controller="MainUIController">
+    <div class="contentDiv" ng-controller="MainUIController">
 
           <h2>SwitchLab</h2>
 
-          <div class="canvasDiv" ng-click="updateTabs()">
+          <div class="canvasDiv" id="modal-container" ng-click="updateTabs()" ng-controller="AlertController">
+
+          <sl-toolbar></sl-toolbar>
   
-            <div class="toolbar" ng-controller="ToolbarController">
-  
-               <div class="btn-group">
-                <button type="button" class="btn toolbarbutton dropdown-toggle"><span class="glyphicon glyphicon-file"></span></button>
-                
-                  <ul class="dropdown-menu">
-                    <li role="presentation">
-                      <a role="menuitem"><span class="glyphicon glyphicon-open"></span><span> Open</span></a>
-                      <a role="menuitem" ng-click="uiSave()">
-                        <span class="glyphicon glyphicon-save"></span><span> Save</span>
-                      </a>
-                    </li>
-              </ul>
-              </div>           
-              
-              <div class="btn-group">
-                  <button type="button" class="btn toolbarbutton" 
-                          ng-model="ui_model.app_mode" btn-radio="'add'">Add</button>
-                  <button type="button" class="btn toolbarbutton" 
-                          ng-model="ui_model.app_mode" btn-radio="'edit'">Edit</button>
-                  <button type="button" class="btn toolbarbutton" 
-                          ng-model="ui_model.app_mode" btn-radio="'del'">Del</button>
-                  <button type="button" class="btn toolbarbutton" 
-                          ng-model="ui_model.app_mode" btn-radio="'link'">Link</button>
-              </div>
-            </div>
-    
-            <canvas id="C" width="1200" height="600" ></canvas>
+            <div><canvas id="C" width="1200" height="600" class="sim-canvas" ></canvas></div>
 
             <div class="popupDiv popover right"  id="switchPopup" style="display: none; position:absolute;">
               <div class="arrow"></div>
@@ -88,7 +63,8 @@
                 </tr>
                 <tr>
                   <td>MAC address</td>
-                  <td><!--FF:FF:FF:00:00:-->
+                  <td>
+                  
                     <input  type="text"
                             ng-model="selectedSwitch.MAC"
                             name="swMACInput"
@@ -105,12 +81,9 @@
                   <td>Priority</td>
                   <td><input></input></td>
                 </tr>
-
               </table>
               </form>
-              
             </div>          
-
           </div> <!-- canvasDiv -->
 
           <div id="tabs">
@@ -138,7 +111,11 @@
   <script src="js/vendor/chance.min.js"></script>
   
   <script src="js/app.js"></script>
+  <script src="js/ui.js"></script>
   <script src="js/controllers.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/msgbox.js"></script>
+  <script src="js/toolbar.js"></script>
   <script src="js/main.js"></script>
   <script src="js/canvas.js"></script>
   <script src="js/sim.js"></script>
