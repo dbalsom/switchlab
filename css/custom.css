@@ -12,7 +12,7 @@
 
 .contentDiv {
   width: 1240px;
-  background-color:white;
+  background-color: white;
   padding: 20px 20px;
 }
 
@@ -62,6 +62,27 @@ input:invalid, textarea:invalid, select:invalid {
     border-color: #ee5f5b;
 }
 
+input:focus.ng-invalid:focus, textarea:focus.ng-invalid:focus, select:focus.ng-invalid:focus {
+    outline: none;
+    border-color: #e9322d;
+    -webkit-box-shadow: 0 0 6px #f8b9b7;
+    -moz-box-shadow: 0 0 6px #f8b9b7;
+    box-shadow: 0 0 6px #f8b9b7;
+}
+input:focus.ng-invalid, textarea:focus.ng-invalid, select:focus.ng-invalid {
+    
+    color: #b94a48;
+    border: 1px solid red;
+    border-color: #ee5f5b;
+}
+
+input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
+    
+    color: #b94a48;
+    border: 1px solid red; !important
+    border-color: #ee5f5b;
+}
+
 .toolbar {
     background-image: -webkit-gradient(
         linear,
@@ -84,6 +105,79 @@ input:invalid, textarea:invalid, select:invalid {
     left: 5px;
 }
 
+.sl-accordion {
+    border: 1px solid black;
+    float: right;
+    width: 280px;
+    height: 600px;
+    overflow-y: scroll;
+    background-image: url('img/squared_metal.png');
+    /*font-family: 'Roboto', 'sans-serif';*/
+    font-size: 100%;
+    font-size: 12px;
+}
+
+.sl-accordion .panel-heading {
+
+
+    background-image: -o-linear-gradient(bottom, #626B70 0%, #464C56 100%);
+    background-image: -moz-linear-gradient(bottom, #626B70 0%, #464C56 100%);
+    background-image: -webkit-linear-gradient(bottom, #626B70 0%, #464C56  100%);
+    background-image: -ms-linear-gradient(bottom, #626B70 0%, #464C56  100%);
+    background-image: linear-gradient(to bottom,  #626B70 0%, #464C56 100%);
+
+    padding: 5px 10px 5px 10px;
+    display: block;
+    cursor: pointer;
+}
+
+.sl-accordion  .panel-title {
+    font-size: 100%;
+    font-size: 12px;    
+    color: white;
+    /*font-weight: 700;*/
+
+}
+
+.sl-accordion .panel {
+
+
+  margin-top: 5px;
+  margin-left: 5px;
+  margin-right: 5px;
+  
+  -webkit-box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5); 
+  
+}
+
+.sl-accordion .panel-body {
+  border: 0;
+  padding: 0;
+}
+
+.sl-accordion .accordion-toggle {
+    display: block;
+}
+
+.sl-accordion td {
+  /* padding-top: 10px; */
+}
+
+.data-table {
+  width: 100%;
+}
+.data-table-label {
+  width: 25%;
+  text-align: right;
+}
+.data-table-input {
+  width: 100%;
+  font-family: 'Inconsolata', 'sans-serif';
+  font-size: 14px;
+  text-align: left;  
+}
+
 /*.btn-group .btn:focus,*/
 .btn-group .btn:active,
 .btn-group .btn.active {
@@ -94,12 +188,8 @@ input:invalid, textarea:invalid, select:invalid {
   text-shadow: 1px 1px 0px #DDD;
 }
 
-.toolbarbutton {
-    margin: 1px;
+.btn3d {
     border: 1px outset;
-    border-radius: 6px;
-    text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
-    
     background-image: -webkit-gradient(
       linear,
       left top,
@@ -114,6 +204,16 @@ input:invalid, textarea:invalid, select:invalid {
     background-image: -webkit-linear-gradient(bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
     background-image: -ms-linear-gradient(bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
     background-image: linear-gradient(to bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
+    
+    -webkit-box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);    
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+}
+
+.toolbarbutton {
+    margin: 1px;
+    border-radius: 6px;
+    
 }
 
 /*

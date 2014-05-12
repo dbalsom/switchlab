@@ -1,0 +1,52 @@
+<div class="data-table-div">
+  <table class="data-table table-striped">
+    <tbody>
+      <tr ng-repeat="item in tableValues" class="data-table-row">
+     
+        <td class="data-table-label">
+          {{item.name}}:
+        </td>
+        <td >
+          
+          <input  type="text"
+                  class="data-table-input"
+                  name="{{item.name}}Input"
+                  ng-model="item.value"
+                  ng-minlength="{{item.minlength}}"
+                  ng-maxlength="{{item.maxlength}}"
+                  ui-mask="{{item.mask}}"
+                  spellcheck="false"
+                  required="false"
+                  ui-validate=" 'item.validator(item.value)' "
+                  ui-validate-watch=" 'item.value' "
+                  >
+          </input>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!--
+
+<div class="table data-table">  
+  <div class="table-row-group">
+    <div class="table-row" ng-repeat="item in tableValues">
+      <div class="table-cell data-table-label">
+        {{item.name}}
+      </div>
+      <div class="table-cell data-table-input">
+        <input  type="text"
+                class="table-input pull-right"
+                name="{{item.name}}Input"
+                ng-model="item.value"
+                ng-minlength="{{item.minlength}}"
+                ng-maxlength="{{item.maxlength}}"
+                required="false"
+                >    
+      </div>
+    </div>
+  </div>
+  
+</div>
+-->

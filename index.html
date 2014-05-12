@@ -16,12 +16,12 @@
   <link rel="stylesheet" href="css/bootstrap.css">
   <link rel="stylesheet" href="css/custom.css">
   <link href='http://fonts.googleapis.com/css?family=Oswald' rel='stylesheet' type='text/css'>
-
+  <link href='http://fonts.googleapis.com/css?family=Inconsolata:400,700' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet' type='text/css'>
+  
   <!-- modernizr only runs in head -->
   <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.7.1/modernizr.min.js"></script> 
-  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js"></script>
-  <script src="http://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.10.0/ui-bootstrap-tpls.min.js"></script>
-  <script src="js/vendor/ui-utils.min.js"></script>
+
 
 </head>
 <body>
@@ -39,12 +39,38 @@
 
           <h2>SwitchLab</h2>
 
-          <div class="canvasDiv" id="modal-container" ng-click="updateTabs()" ng-controller="AlertController">
+          <div class="canvasDiv" id="modal-container"  ng-controller="AlertController">
 
           <sl-toolbar></sl-toolbar>
-  
-            <div><canvas id="C" width="1200" height="600" class="sim-canvas" ></canvas></div>
 
+            <div ng-controller="uiAccordionController" class="sl-accordion"  >
+              <accordion close-others="false">
+              
+                <accordion-group 
+                  ng-repeat="panel in panels" 
+                  is-open="open" 
+                  data-toggle="collapse">
+
+                  <accordion-heading  >
+                    {{panel.name}}
+                    <i  class="pull-right glyphicon" 
+                        ng-class="{ 'glyphicon-chevron-down': open,
+                                    'glyphicon-chevron-right': !open}"></i>
+                  </accordion-heading> 
+                  
+                  <sl-datatable></sl-datatable>
+                  
+                </accordion-group>
+              </accordion>
+            </div>
+          
+            <div>
+              <canvas id="C" width="900" height="600" class="sim-canvas" ></canvas>
+            </div>
+
+              
+            
+            
             <div class="popupDiv popover right"  id="switchPopup" style="display: none; position:absolute;">
               <div class="arrow"></div>
               
@@ -84,6 +110,9 @@
               </table>
               </form>
             </div>          
+
+
+            
           </div> <!-- canvasDiv -->
 
           <div id="tabs">
@@ -101,9 +130,10 @@
 </div> <!-- bodyDiv -->
 </div> <!-- appDiv -->
 
-
-  
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.10.0/ui-bootstrap-tpls.min.js"></script>
+  <script src="js/vendor/ui-utils.min.js"></script>
   <script src="http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.compat.min.js"></script>
   <script src="http://cdnjs.cloudflare.com/ajax/libs/EaselJS/0.7.1/easeljs.min.js"></script>
 
@@ -113,6 +143,7 @@
   <script src="js/app.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/controllers.js"></script>
+  <script src="js/data_table.js"></script>
   <script src="js/modal.js"></script>
   <script src="js/msgbox.js"></script>
   <script src="js/toolbar.js"></script>

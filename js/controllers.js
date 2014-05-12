@@ -37,10 +37,8 @@ app.controller( 'MainUIController', [ '$scope', '$workspace_modal', 'uiMaskConfi
     
     $scope.updateTabs = function() {
         
-        //console.log( "updateTabs() triggered" );
         $scope.tabs = sim.getDeviceNames();
         $scope.selectedSwitch = main.getSelectedSwitch();
-    
     };
 
     $scope.$watch('ui_model.app_mode', function(mode) {

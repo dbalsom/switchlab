@@ -1,29 +1,21 @@
 
-app.factory('ToolbarData', function ( ui ) {
-    return {
-        
-        menu: [{
-            name: "file",
-            text: "",
-            icon: "file",
-            items: [{
-                name: "Open",
-                icon: "open",
-                func: ui.menuOpen
-            }, {
-                name: "Save",
-                icon: "save",
-                func: ui.menuSave
-            }]
+app.controller('ToolbarController', ['$scope', 'main', '_export', 'ui', 'sim', 'canvas',
+    function( $scope, main, _export, ui, sim, canvas ) {
+    
+    $scope.menu = [{
+        name: "file",
+        text: "",
+        icon: "file",
+        items: [{
+            name: "Open",
+            icon: "open",
+            func: $scope.uiOpen
+        }, {
+            name: "Save",
+            icon: "save",
+            func: $scope.uiSave
         }]
-    }
-});
-
-app.controller('ToolbarController', ['$scope', 'main', '_export', 'ToolbarData', 'ui',
-    function( $scope, main, _export, ToolbarData, ui ) {
-    
-    $scope.menu = ToolbarData.menu;
-    
+        }];
     
     $scope.uiOpen = function() {
     
@@ -33,7 +25,11 @@ app.controller('ToolbarController', ['$scope', 'main', '_export', 'ToolbarData',
     };
 
     $scope.uiReset = function() {
-        ui.toolbarReset();
+        ui.msgBox( "Reset Workspace?", "Delete all devices and start a new workspace?" )
+            .then( function() { 
+                sim.reset();
+                canvas.reset();
+            });
     };
 }]);
 

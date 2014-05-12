@@ -23,25 +23,104 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-// UI Service.  Handles the DOM UI interface elements
-app.factory( 'ui', function( _export, $workspace_modal, sim, canvas )
+app.controller( 'uiAccordionController', [ '$scope', 'uiInfoPanels',
+    function ( $scope, uiInfoPanels ) {
+    
+        $(".panel-heading").addClass( "accordion-toggle" );
+        
+        $scope.panels;
+        
+        $scope.open = true;
+        $scope.updatePanels = function() {
+            //console.log( "updatePanels()" );
+            $scope.panels = uiInfoPanels.getPanelList();
+        };
+    }]);
+
+// Panel Service delivers the data model to the accordion and data table controllers
+app.factory( 'uiInfoPanels', function() {
+
+    _panelList = [];
+
+    function getPanelList() {
+        return _panelList;
+    }
+
+    function getPanelValues( panelParam ) {
+    
+        var panel;
+        switch( typeof panelParam ) {
+            case 'string':
+                panel = _.find( _panelList, { 'name': panelParam });
+                break;
+            case 'number':
+                panel = _panelList[ panelParam ];
+                break;
+        }
+            
+        if( panel ) {
+            return panel.values;
+        }            
+    }
+
+    function Value( params ) {
+        this.name  = params.name;
+        this.value = params.value;
+        this.min   = params.min;
+        this.max   = params.max;
+        this.mask  = params.mask;
+        // If no validator supplied, provide a default one that always validates
+        this.validator = params.validator ? params.validator : function(){ return true; };
+        
+    }
+    
+    function Panel( name, open ) {
+        this.name   = name;
+        this.open   = open;
+        this.index  = -1;
+        this.values = [];
+    }
+    
+    function addValue( value, panel ) {
+        
+        if( panel && value ) {
+            panel.values.push( value );
+        }
+    }
+    
+    function addPanel( panel ) {
+        panel.index = _panelList.push( panel ) - 1;
+    }
+
+    function delPanel( panel ) {
+        _panelList.splice( panel.index, 1 );
+    }
+    
+    function reset( panel ) {
+        _.forEach( _panelList, function( panel ) {
+            // panel destructor here
+        });
+        _panelList.length = 0;
+    }
+    
+    return {
+        Value:          Value,
+        Panel:          Panel,
+        
+        addPanel:       addPanel,
+        delPanel:       delPanel,
+        addValue:       addValue,
+        reset:          reset,
+        getPanelValues: getPanelValues,
+        getPanelList:   getPanelList
+    }
+});
+    
+    
+// UI Service.  Handles various DOM UI interface elements
+app.factory( 'ui', function( $workspace_modal, $timeout, sim )
 {
 
-    function menuOpen() {
-    
-    }
-    
-    function menuSave() {
-        console.log( _export.toJSON() );    
-    }
-    
-    function toolbarReset() {
-        msgBox( "Reset Workspace?", "Delete all devices and start a new workspace?" ).then( 
-            function() { 
-                sim.reset();
-            });
-    }
-    
     function msgBox( title, text, icon, buttons ) {
         
         params = { 
@@ -63,12 +142,21 @@ app.factory( 'ui', function( _export, $workspace_modal, sim, canvas )
             
         return modalInstance.result;
     }
+
+    function updatePanels() {
+        var updateScope = angular.element('[ng-controller=uiAccordionController]').scope();
+        $timeout( function() { updateScope.updatePanels() }, 0, true );
+    }
     
+    function updateTabs() {
+
+        var updateScope = angular.element('[ng-controller=MainUIController]').scope();
+        $timeout( function() { updateScope.updateTabs() }, 0, true ); 
+    }
     
     return { 
-        menuOpen:   menuOpen,
-        menuSave:   menuSave,
-        msgBox:     msgBox,
-        toolbarReset: toolbarReset
+        updatePanels:   updatePanels,
+        updateTabs:     updateTabs,
+        msgBox:         msgBox
     }
 });

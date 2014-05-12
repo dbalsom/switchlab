@@ -67,10 +67,12 @@ app.factory( 'sim', function()
 
         var hostName;
 
+        // If we can validate the parameter as a hostname, we will return it
         if( name && isValidHostName( name ) && isUniqueHostName( name )) {
             hostName = name;
         }
         else do { 
+            // Otherwise, generate a random unique hostname
             hostName = chance.city().toLowerCase();
         } while( !isValidHostName( hostName ) && !isUniqueHostName( hostName ));
         
@@ -115,6 +117,11 @@ app.factory( 'sim', function()
         }
     }
 
+    SwitchDevice.prototype.getMAC
+        = function() {
+            return this._MAC;            
+        };
+    
     SwitchDevice.prototype.getHostName
         = function() {
             return this._name;
@@ -274,12 +281,14 @@ app.factory( 'sim', function()
     function getDeviceNames() {
         var list = [];
         
+        list.length = 0;
         for( var device in _devices ) {
         
             if( device != 'length' ) {
                 list.push( device );
             }
         }
+        console.log( list.length );
         return list;
     };
     
@@ -356,8 +365,7 @@ app.factory( 'sim', function()
     
     function reset() {
         _.forEach( _devices, function( d ) {
-            d.destroy();
-            delete _devices.d;
+            deleteDevice( d );
         });
     }
     

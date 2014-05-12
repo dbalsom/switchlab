@@ -81,7 +81,7 @@ app.factory( 'mouse', function() {
     };
 });
 
-app.factory( 'canvas', function( state, img, sim, mouse ) {
+app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
 
     'use strict';
     var CANVAS_ID = "C";
@@ -102,7 +102,7 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
     var _nodes = {};
     var _nodeCount = 0;
     
-    var _selectedNode = {};
+    var _selectedNode;
     
     var _dragging = false;
 
@@ -136,7 +136,6 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
         else*/
         if( state.get() == "add" ) {
             newSwitch( { x: evt.stageX, y: evt.stageY } );
-            _dirty = true;
         }
     }
     
@@ -146,7 +145,12 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
         sim.addDevice( newSw );
        
         var newNode = new Node( newSw.getHostName(), "switch", pt.x, pt.y );
+        selectNode( newNode );
+
         addNode( newNode );
+        
+        ui.updateTabs();
+        update();
     }; 
     
     function updateLinkCursor( on, x1, y1, x2, y2 ) {
@@ -173,6 +177,58 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
         _dirty = true;
     }    
 
+    function selectNode( node ) {
+    
+        // Reset color for previously selected node
+        if( _selectedNode ) {
+            _selectedNode.setBandColor( "white", "white" );
+        }
+        // Change selection...
+        _selectedNode = node;
+
+        uiInfoPanels.reset();
+        if( _selectedNode ) {
+            // Now change color for newly selected node
+            _selectedNode.setBandColor( "cyan", "white" );
+            
+            var selectedDevice = sim.getDeviceByHostName( _selectedNode.name );
+            
+            var newPanel = new uiInfoPanels.Panel( "General", true );
+            uiInfoPanels.addPanel( newPanel );
+            
+            var nameValue = new uiInfoPanels.Value({    name: "Name",
+                                                        value: _selectedNode.name,
+                                                        type: "string",
+                                                        min: 1,
+                                                        max: 63,
+                                                        validator: function( name ) {
+                                                                return sim.isValidHostName( name )
+                                                            }
+                                                        });
+                                                      
+            uiInfoPanels.addValue( nameValue, newPanel );
+            
+            
+            
+            var macValue = new uiInfoPanels.Value({   name: "MAC",
+                                                      value: selectedDevice.getMAC(),
+                                                      type: "string",
+                                                      min: 12,
+                                                      max: 12,
+                                                      mask: "HH:HH:HH:HH:HH:HH",
+                                                      validator: function() {
+                                                            //console.log( "In validator()" );
+                                                            return true;
+                                                        }
+                                                      
+                                                      });
+            uiInfoPanels.addValue( macValue, newPanel );                                                        
+            
+        }
+        _dirty = true;    
+        ui.updatePanels();
+    }
+    
     function drawLinksFrom( node, visitedList ) {
             
         var linkShape = new createjs.Shape();
@@ -286,7 +342,7 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
     
     function Node( name, icon, x, y ) {
 
-        var n = this; // Pull this node into closure scope
+        var n = this; // Pull this node into closure scope for container events (fixme)
         this.name = name;
         this.icon = icon;
         this.x = x;
@@ -309,8 +365,15 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
         this.nodeCirc.graphics.drawCircle(  this.nodeImg.width/2, 
                                             this.nodeImg.height/2, 
                                             NODE_RADIUS).endFill().endStroke();
-                                            
         this.nodeCirc.shadow = new createjs.Shadow("rgba(0,0,0,.5)", 3, 3, 15);
+        
+        this.nodeBand = new createjs.Shape();
+        this.nodeBand.graphics.beginStroke("white").setStrokeStyle(4);
+        this.nodeBand.graphics.drawCircle(  this.nodeImg.width/2, 
+                                            this.nodeImg.height/2, 
+                                            NODE_RADIUS - 3).endFill().endStroke();       
+                                            
+
         
         this.nodeBubbles = new createjs.Shape();
         this.bubbleList = [];
@@ -318,6 +381,7 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
         this.nodeCntr = new createjs.Container();  
         this.nodeCntr.name = name;
         this.nodeCntr.addChild( this.nodeCirc );
+        this.nodeCntr.addChild( this.nodeBand );
         this.nodeCntr.addChild( this.nodeBubbles );
         this.nodeCntr.addChild( this.nodeBmp );
         this.nodeCntr.addChild( this.nodeTxt );
@@ -346,7 +410,9 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
         this.nodeCntr.on( "mousedown", function( evt ) 
         {
             mouse.down( evt.stageX, evt.stageY );
-            _selectedNode = this;
+            
+            selectNode( n );
+
            // hidePopups();
         });
         
@@ -388,9 +454,9 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
                 if( state.get() == "del" ) {
                     sim.deleteDevice( n.name )
                     deleteNode( n );
-                    _dirty = true;
-                    _dirtyLinks = true;
-                    console.log("BAHLEETED!");
+                    update();
+                    ui.updatePanels();
+                    ui.updateTabs();
                 }
                 
                 var pt;
@@ -412,7 +478,19 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
 
     }
     
-    Node.prototype.destroy = function () {
+    Node.prototype.setBandColor = function( strokeColor, fillColor ) {
+        
+        this.nodeBand.graphics.clear();
+ 
+
+        this.nodeBand.graphics.beginStroke(strokeColor).setStrokeStyle(4).beginFill(fillColor);
+        this.nodeBand.graphics.drawCircle(  this.nodeImg.width/2, 
+                                            this.nodeImg.height/2, 
+                                            NODE_RADIUS - 3 ).endFill().endStroke();  
+
+    }
+    
+    Node.prototype.destroy = function() {
         
         this.nodeCntr.removeChild( this.nodeCirc );
         this.nodeCntr.removeChild( this.nodeBubbles );
@@ -433,6 +511,7 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
         _nodeCount++;
         
         _stage.addChild( node.nodeCntr );
+        update();
     }   
     
     function deleteNode( node ) {
@@ -440,7 +519,16 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
         node.destroy();
         _stage.removeChild( node.nodeCntr );
         delete _nodes[node.name];
-
+        selectNode(null);
+    }
+    
+    function reset() {
+        _.forEach( _nodes, function( node ) {
+           deleteNode( node ); 
+        });
+        ui.updatePanels();
+        ui.updateTabs();
+        update();
     }
     
     function init(id) {
@@ -481,6 +569,10 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
             var newNode = new Node( importNode.name, importNode.icon, importNode.x, importNode.y );
             addNode( newNode );
         });
+
+        ui.updatePanels();
+        ui.updateTabs();
+        update();
     }
     
     function exportView() {
@@ -512,6 +604,7 @@ app.factory( 'canvas', function( state, img, sim, mouse ) {
         exportView: exportView,
         addNode:    addNode,
         deleteNode: deleteNode,
+        reset:      reset,
         update:     update,
         init:       init
     };
