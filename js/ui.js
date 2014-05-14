@@ -40,15 +40,14 @@ app.controller( 'uiAccordionController', [ '$scope', 'uiInfoPanels',
 // Panel Service delivers the data model to the accordion and data table controllers
 app.factory( 'uiInfoPanels', function() {
 
-    _panelList = [];
-
+    var _panelList = [];
+    
     function getPanelList() {
         return _panelList;
     }
 
-    function getPanelValues( panelParam ) {
-    
-        var panel;
+    function getPanel( panelParam ) {
+        var panel = null;
         switch( typeof panelParam ) {
             case 'string':
                 panel = _.find( _panelList, { 'name': panelParam });
@@ -57,13 +56,20 @@ app.factory( 'uiInfoPanels', function() {
                 panel = _panelList[ panelParam ];
                 break;
         }
-            
+        
+        return panel;
+    }                
+    
+    function getPanelItems( panelParam ) {
+    
+        var panel = getPanel( panelParam );
         if( panel ) {
-            return panel.values;
+            return panel.items;
         }            
     }
 
-    function Value( params ) {
+    function InputValueItem( params ) {
+        this.type  = "InputValue";
         this.name  = params.name;
         this.value = params.value;
         this.min   = params.min;
@@ -71,23 +77,34 @@ app.factory( 'uiInfoPanels', function() {
         this.mask  = params.mask;
         // If no validator supplied, provide a default one that always validates
         this.validator = params.validator ? params.validator : function(){ return true; };
-        
+    }
+    
+    function ObjectItem( keys, object ) {
+        this.type   = "Object";
+        this.keys   = keys;
+        this.object = object;
+    }
+
+    function ArrayItem( headerKey, keys, array ) {
+        this.type   = "Array";
+        this.headerKey = headerKey;
+        this.keys   = keys;
+        this.array  = array;
     }
     
     function Panel( name, open ) {
         this.name   = name;
         this.open   = open;
         this.index  = -1;
-        this.values = [];
-    }
-    
-    function addValue( value, panel ) {
         
-        if( panel && value ) {
-            panel.values.push( value );
-        }
+        this.items      = [];
     }
     
+    Panel.prototype.addItem = function( item ) {
+        
+        this.items.push( item );
+    }
+
     function addPanel( panel ) {
         panel.index = _panelList.push( panel ) - 1;
     }
@@ -104,14 +121,16 @@ app.factory( 'uiInfoPanels', function() {
     }
     
     return {
-        Value:          Value,
+
+        InputValueItem: InputValueItem,
+        ObjectItem:     ObjectItem,
+        ArrayItem:      ArrayItem,
         Panel:          Panel,
         
         addPanel:       addPanel,
         delPanel:       delPanel,
-        addValue:       addValue,
         reset:          reset,
-        getPanelValues: getPanelValues,
+        getPanelItems:  getPanelItems,
         getPanelList:   getPanelList
     }
 });

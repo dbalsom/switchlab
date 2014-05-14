@@ -196,34 +196,44 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
             var newPanel = new uiInfoPanels.Panel( "General", true );
             uiInfoPanels.addPanel( newPanel );
             
-            var nameValue = new uiInfoPanels.Value({    name: "Name",
-                                                        value: _selectedNode.name,
-                                                        type: "string",
-                                                        min: 1,
-                                                        max: 63,
-                                                        validator: function( name ) {
-                                                                return sim.isValidHostName( name )
-                                                            }
-                                                        });
+            var nameValue = 
+                new uiInfoPanels.InputValueItem(
+                    {    
+                        name: "Name",
+                        value: _selectedNode.name,
+                        type: "string",
+                        min: 1,
+                        max: 63,
+                        validator: 
+                            function( name ) {
+                                return  (name == _selectedNode.name) ||
+                                        sim.isValidHostName( name ) &&
+                                        sim.isUniqueHostName( name );
+                            }
+                    });
                                                       
-            uiInfoPanels.addValue( nameValue, newPanel );
+            newPanel.addItem( nameValue );
             
+            var macValue = 
+                new uiInfoPanels.InputValueItem(
+                    { 
+                        name: "MAC",
+                        value: selectedDevice.getMAC(),
+                        type: "string",
+                        min: 12,
+                        max: 12,
+                        mask: "HH:HH:HH:HH:HH:HH"
+                    });
+            newPanel.addItem( macValue );    
+
+            newPanel = new uiInfoPanels.Panel( "Interfaces", true );
+            uiInfoPanels.addPanel( newPanel );
             
+            var newItem = 
+                new uiInfoPanels.ArrayItem( "_name", ["_hasPhysLink"], 
+                                            selectedDevice.getInterfaces() );
             
-            var macValue = new uiInfoPanels.Value({   name: "MAC",
-                                                      value: selectedDevice.getMAC(),
-                                                      type: "string",
-                                                      min: 12,
-                                                      max: 12,
-                                                      mask: "HH:HH:HH:HH:HH:HH",
-                                                      validator: function() {
-                                                            //console.log( "In validator()" );
-                                                            return true;
-                                                        }
-                                                      
-                                                      });
-            uiInfoPanels.addValue( macValue, newPanel );                                                        
-            
+            newPanel.addItem( newItem );
         }
         _dirty = true;    
         ui.updatePanels();

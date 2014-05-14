@@ -167,16 +167,70 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
 .data-table {
   width: 100%;
 }
-.data-table-label {
-  width: 25%;
-  text-align: right;
+
+.data-table-row {
+  padding: 3px;
+  overflow: hidden; /* contain floats */
 }
+
+.data-table-array .data-table-row {
+  border-bottom: 1px solid LightSlateGrey;
+}
+
+.data-table-label {
+  float: left;
+  width: 33%;
+  text-align: right;
+  vertical-align: center;
+  padding-top:5px;
+  overflow: hidden;
+}
+
+.data-table-array .data-table-label {
+  font-size: 100%;
+  font-size: 11px;
+}
+
+.data-table-array {
+
+  font-size: 100%;
+  font-size: 12px;
+}
+
+.data-table-array .data-table-subheader {
+  /* background-color: #9daabf; */
+    background-color: #b2c1d9;
+    background-image: -o-linear-gradient(bottom, #c7d7f2 0%, #9DAABF 100%);
+    background-image: -moz-linear-gradient(bottom, #c7d7f2 0%, #9DAABF 100%);
+    background-image: -webkit-linear-gradient(bottom, #c7d7f2 0%, #9DAABF 100%);
+    background-image: -ms-linear-gradient(bottom, #c7d7f2 0%, #9DAABF 100%);
+    background-image: linear-gradient(to bottom, #c7d7f2 0%, #9DAABF 100%);
+    
+    padding-left: 10px;
+}
+
+.data-table-content {
+  padding-left: 5px;
+  float: left;
+  padding-top: 5px;
+  vertical-align: center;
+  font-family: 'Inconsolata', 'sans-serif';
+  font-size: 100%;
+}
+
+.data-table-array .data-table-content {
+  border-left: 2px solid #9DAABF;
+  padding-left: 3px;
+}
+
 .data-table-input {
-  width: 100%;
+  width: 66%;
   font-family: 'Inconsolata', 'sans-serif';
   font-size: 14px;
   text-align: left;  
+  float: left;
 }
+
 
 /*.btn-group .btn:focus,*/
 .btn-group .btn:active,

@@ -9,7 +9,7 @@ app.controller('TableController', ['$scope',
 app.controller('TableInstanceController', ['$scope', 'uiInfoPanels',
     function( $scope, uiInfoPanels ) {
         
-    $scope.tableValues = uiInfoPanels.getPanelValues( $scope.$parent.$index );
+    $scope.tableItems = uiInfoPanels.getPanelItems( $scope.$parent.$index );
     $scope.status = {};
    // $scope.open = true;
     
@@ -18,7 +18,7 @@ app.controller('TableInstanceController', ['$scope', 'uiInfoPanels',
 app.directive('slDatatable', function() {
 
     return {
-    
+        require: 'ngSwitch',
         restrict: 'EA',
         templateUrl: 'template/data_table.html',
         controller: 'TableInstanceController',

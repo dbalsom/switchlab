@@ -181,6 +181,10 @@ app.factory( 'sim', function()
             return null;
         };
         
+    SwitchDevice.prototype.getInterfaces = function() {
+        return this._interfaces;
+    }
+        
     SwitchDevice.prototype.connectToHostName = function( dstName, dstInterfaceName ) {
             var srcInterface = this.getAvailableInterface();
             var dstDevice = _devices[dstName];
@@ -382,6 +386,7 @@ app.factory( 'sim', function()
         getDeviceByHostName:    getDeviceByHostName,
         isValidMAC:             isValidMAC,
         isValidHostName:        isValidHostName,
+        isUniqueHostName:       isUniqueHostName,
         reset:                  reset
     };
     
