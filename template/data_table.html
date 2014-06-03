@@ -1,0 +1,55 @@
+<div class="data-table-div">
+  
+  
+  <div class="data-table">
+
+    <div ng-repeat="item in tableItems"  ng-switch="item.type" > 
+
+      <div ng-switch-when="InputValue">
+        <div class="data-table-row" ng-class-odd="'odd'" ng-class-even= "'even'" >
+          <div class="data-table-label">
+            {{item.name}}:
+          </div>
+          
+            <input  type="text"
+                    class="data-table-input"
+                    name="{{item.name}}Input"
+                    ng-model="item.value"
+                    ng-minlength="{{item.minlength}}"
+                    ng-maxlength="{{item.maxlength}}"
+                    ui-mask="{{item.mask}}"
+                    spellcheck="false"
+                    required="false"
+                    ui-validate=" 'item.validator(item.value)' "
+                    ui-validate-watch=" 'item.value' " >
+            </input>
+
+        </div>
+      </div>
+
+      <div ng-switch-when="Grid" ng-grid="item.gridOptions" class="data-grid" ng-style="getTableHeight(item)">
+      </div>
+      
+      <div ng-switch-when="OldArray">
+        <div class="data-table-row-group data-table-array" ng-repeat="object in item.array" >
+        
+          <div ng-if="item.headerKey" class="data-table-subheader">
+            {{ object[item.headerKey] }}
+          </div>
+          
+          <div class="data-table-row" ng-repeat="key in item.keys">
+            <div class="data-table-label">
+              {{key}}:
+            </div>
+
+            <div class="data-table-content">
+              {{object[key]}}
+            </div>
+          </div>
+        </div>
+      </div> 
+
+      </div>
+    </div>
+  </div>
+</div>
