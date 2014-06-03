@@ -23,7 +23,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-var app = angular.module('SLApp', ['ui.bootstrap', 'ui.mask', 'ui.validate', 'workspace_modal']);
+var app = angular.module('SLApp', [ 'ui.bootstrap', 
+                                    'ui.bootstrap.tooltip',
+                                    'ui.mask', 
+                                    'ui.validate', 
+                                    'ngAnimate',
+                                    'ngGrid',
+                                    'workspace_modal']);
+
+app.config( function( $tooltipProvider ) {
+    $tooltipProvider.options( { placement: 'bottom',
+                                animation: true,
+                                popupDelay: 600,
+                                appendToBody: true });
+});
+
+app.filter('capitalize', function() {
+    return function(input, scope) {
+        if (input != null) {
+            input = input.toLowerCase();
+        }
+        return input.substring(0,1).toUpperCase() + input.substring(1);
+    }
+});
 
 app.run( function( main, img, canvas, $http, _import ) 
 {
@@ -31,6 +53,8 @@ app.run( function( main, img, canvas, $http, _import )
      * and other global settings
      */
      var data = {};
+     
+
      
     $http({method: 'GET', url: './json/manifest.json'})
         .then( function( response ) {
@@ -145,36 +169,61 @@ app.factory( 'state', function()
     
     /* state name, entry function, exit function */
     var _appStates = {
-        "add":  { enter: null, exit: null },
-        "edit": { enter: null, exit: null },
-        "del":  { enter: null, exit: null },
-        "link": { enter: null, exit: null }
-    };
-    var _appState = "add";
-
-    function set( mode ) {
-
-        _appStates[mode].exit && _appStates[_appState].exit();
-        
-        if( _appStates[mode] ) {
-            _appStates[mode].enter && _appStates[mode].enter();
-            _appState = mode;
+        editor: {
+            add:  { enter: null, exit: null },
+            edit: { enter: null, exit: null },
+            del:  { enter: null, exit: null },
+            link: { enter: null, exit: null }
+        },
+        sim: {
+            running: { enter: null, exit: null },
+            stopped: { enter: null, exit: null }
         }
     };
+    var _appState = { editor: "add", sim: "stopped" };
+
+    function set( type, mode ) {
+
+        if( _appStates[type] && _appStates[type][_appState] ) {
+        
+            if( _appStates[type][_appState].exit ) {
+                _appStates[type][_appState].exit();
+            }
+        }
+
+        if( _appStates[type] && _appStates[type][mode] ) {
+            if( _appStates[type][mode].enter ) {
+                _appStates[type][mode].enter();
+            }        
+        }
+        
+        _appState[type] = mode;   
+        
+    };
+    function get( type ) {
+        return _appState[type];
+    }
     
     return {
-        get: function() { return _appState; },
+        get: get,
         set: set
     };
 });
 
-app.factory( '_import', function( canvas, sim, $http ) 
+app.factory( '_import', function( canvas, sim, $http, notify ) 
 {
     'use strict';
     function fromJSON( jsObj ) {
    
-        sim.importModel( jsObj );
-        canvas.importView( jsObj );
+        try { 
+            sim.importModel( jsObj.sim );
+            canvas.importView( jsObj.view );
+        }
+        catch( err ) {
+            notify.write( err );
+            console.log( err );
+        }
+        
         canvas.update();
     }
     
@@ -200,13 +249,12 @@ app.factory( '_export', function( canvas, sim )
     'use strict';
     function toJSON() 
     {
-        var ModelObject = {};
+        var ExportObject = {};
     
-        ModelObject = sim.exportModel();
-        _.extend( ModelObject, canvas.exportView() );
+        ExportObject.sim     = sim.exportModel();
+        ExportObject.view    = canvas.exportView();
         
-        var JSONObject = angular.toJson( ModelObject, true );
-        return JSONObject;        
+        return JSON.stringify( ExportObject, null, '\t' );
     }
     return {
         toJSON: toJSON

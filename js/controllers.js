@@ -26,12 +26,14 @@ THE SOFTWARE.
 // http://the.longaccess.com/developers/2013/11/20/angular-ui-hex-input-mask/
 // Thanks to Konstantinos Koukopoulos 
 
-app.controller( 'MainUIController', [ '$scope', '$workspace_modal', 'uiMaskConfig','main', 'state', 'sim', 
-    function ($scope, $modal, uiMaskConfig, main, state, sim ) {
+app.controller( 'MainUIController', [ '$scope', '$workspace_modal', 'uiMaskConfig','main', 'state', 'sim', 'ui',
+    function ($scope, $modal, uiMaskConfig, main, state, sim, ui ) {
  
     uiMaskConfig.maskDefinitions['H'] = /[0-9a-fA-F]/;
-    $scope.ui_model = {};
-    $scope.ui_model.app_mode = "add"; 
+    
+    $scope.ui_model = ui.getModel();
+    $scope.ui_model.editor_mode = "add"; 
+    
     $scope.tabs = [];
     $scope.selectedSwitch = {};
     
@@ -41,8 +43,8 @@ app.controller( 'MainUIController', [ '$scope', '$workspace_modal', 'uiMaskConfi
         $scope.selectedSwitch = main.getSelectedSwitch();
     };
 
-    $scope.$watch('ui_model.app_mode', function(mode) {
-        state.set( mode );
+    $scope.$watch('ui_model.editor_mode', function(mode) {
+        state.set( "editor", mode );
     });
     
     $scope.$watch('selectedSwitch.name', function(name) {

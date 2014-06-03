@@ -81,7 +81,7 @@ app.factory( 'mouse', function() {
     };
 });
 
-app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
+app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notify ) {
 
     'use strict';
     var CANVAS_ID = "C";
@@ -94,13 +94,19 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
     var _stage = {};
     var _dirty = false;
     var _dirtyLinks = false;
+    var _dirtyUI = false;
 
     var _linkCntr = {};    
+    var _packetCntr = {};
     var _linkCursor = {};
     var _bubbleCntr = {};
+
     
     var _nodes = {};
     var _nodeCount = 0;
+
+    var _tweens = [];
+    var _animating = false;
     
     var _selectedNode;
     
@@ -118,14 +124,23 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
     }
     
     function handleTick( evt ) {
+
+        if( _dirtyUI ) {
+            ui.updateTabs();
+            ui.updatePanels();
+            _dirtyUI = false;
+        }
+        
         if( _dirtyLinks ) {
             updateLinks();
             _dirtyLinks = false;
         }
-        if( _dirty ) {
+        
+        if( _dirty || _animating ) {
             _stage.update( evt );
             _dirty = false;
         }  
+        
     }
     
     function handleBGClick( evt ) {
@@ -134,23 +149,30 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
             hidePopups();
         }
         else*/
-        if( state.get() == "add" ) {
-            newSwitch( { x: evt.stageX, y: evt.stageY } );
+        if( ui.getEditorMode() == "add" ) {
+            newDevice( { x: evt.stageX, y: evt.stageY } );
         }
     }
     
-    function newSwitch( pt )
+    function newDevice( pt )
     {
-        var newSw = new sim.SwitchDevice( name );
-        sim.addDevice( newSw );
-       
-        var newNode = new Node( newSw.getHostName(), "switch", pt.x, pt.y );
-        selectNode( newNode );
-
-        addNode( newNode );
+        var type = ui.getEditorAddType();
         
-        ui.updateTabs();
-        update();
+        var newDevice = sim.createDevice( type );
+                
+        if( sim.addDevice( newDevice ) ) {
+       
+            var newNode = new Node( newDevice.getHostName(), type, pt.x, pt.y );
+            addNode( newNode );
+            selectNode( newNode );
+            
+            ui.updateTabs();
+            update();
+        }
+        else {
+        
+            console.log("Device creation failed: " + type );
+        }
     }; 
     
     function updateLinkCursor( on, x1, y1, x2, y2 ) {
@@ -174,8 +196,25 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
                 visitedList[node] = true;
             }
         }
-        _dirty = true;
     }    
+    
+    function testPackets( node ) {
+        if( node ) {
+            var device = sim.getDeviceByHostName( node.name );
+            if( device ) {
+                var neighbors = device.getNeighbors();
+            }
+            for( var p in neighbors ) {
+            
+                for( var iface in neighbors[p].interfaces ) {
+                
+                    console.log( "Sending packet from interface " + neighbors[p].interfaces[iface].intName );
+                    sendPacket( _selectedNode, neighbors[p].interfaces[iface].intName, _nodes[p] );
+                }
+                
+            }
+        }
+    }
 
     function selectNode( node ) {
     
@@ -189,54 +228,47 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
         uiInfoPanels.reset();
         if( _selectedNode ) {
             // Now change color for newly selected node
-            _selectedNode.setBandColor( "cyan", "white" );
+            _selectedNode.setBandColor( "DarkSalmon", "white" );
             
-            var selectedDevice = sim.getDeviceByHostName( _selectedNode.name );
-            
-            var newPanel = new uiInfoPanels.Panel( "General", true );
-            uiInfoPanels.addPanel( newPanel );
-            
-            var nameValue = 
-                new uiInfoPanels.InputValueItem(
-                    {    
-                        name: "Name",
-                        value: _selectedNode.name,
-                        type: "string",
-                        min: 1,
-                        max: 63,
-                        validator: 
-                            function( name ) {
-                                return  (name == _selectedNode.name) ||
-                                        sim.isValidHostName( name ) &&
-                                        sim.isUniqueHostName( name );
-                            }
-                    });
-                                                      
-            newPanel.addItem( nameValue );
-            
-            var macValue = 
-                new uiInfoPanels.InputValueItem(
-                    { 
-                        name: "MAC",
-                        value: selectedDevice.getMAC(),
-                        type: "string",
-                        min: 12,
-                        max: 12,
-                        mask: "HH:HH:HH:HH:HH:HH"
-                    });
-            newPanel.addItem( macValue );    
-
-            newPanel = new uiInfoPanels.Panel( "Interfaces", true );
-            uiInfoPanels.addPanel( newPanel );
-            
-            var newItem = 
-                new uiInfoPanels.ArrayItem( "_name", ["_hasPhysLink"], 
-                                            selectedDevice.getInterfaces() );
-            
-            newPanel.addItem( newItem );
+            ui.selectDevice( _selectedNode.name );
         }
-        _dirty = true;    
+
         ui.updatePanels();
+        _dirty = true;    
+    }
+    
+    function sendPacket( srcNode, srcInt, dstNode ) {
+
+        var srcBubble = _.find( srcNode.bubbleList, 
+            function( bubble ) { 
+                return bubble.intName == srcInt; 
+            });
+        
+        if( !srcBubble ) {
+            return false;
+        }
+                
+        var packetShape = new createjs.Shape();
+        
+        packetShape.graphics.setStrokeStyle(1)
+                            .beginStroke("black")
+                            .beginFill("cyan")
+                            .drawCircle( 0, 0, 8 )
+                            .endFill()
+                            .endStroke();
+        packetShape.x = srcBubble.x;
+        packetShape.y = srcBubble.y;
+        
+
+        console.log( "Tween from " + srcNode.x + "," + srcNode.y + " to " + dstNode.x + "," + dstNode.y );
+
+        createjs.Tween.get( packetShape )
+                      .to( { x: srcBubble.dstX, y: srcBubble.dstY }, 1000, createjs.Ease.getPowInOut(2.5) )
+                      .call( function() { _animating = false; } );
+        
+        _packetCntr.addChild( packetShape );
+        _tweens.push( packetShape );
+        _animating = true;
     }
     
     function drawLinksFrom( node, visitedList ) {
@@ -249,8 +281,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
         
         var nInterfaces;
 
-        var bubbleList = [];
-        var interfaceBubbleList = [];
+        var neighborBubbleList = [];
         var angleStart;
         var angleEnd;
         var bubbleDistance;
@@ -260,6 +291,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
         var collideDistance = ((INTERFACE_RADIUS + 2) * 2 );
         
         srcBubbleShape.graphics.clear();
+        node.bubbleList.length = 0;
         
         var device = sim.getDeviceByHostName( node.name );
         if( !device ) return;
@@ -268,19 +300,24 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
         
         for( var p in neighbors ) {
             
-            interfaceBubbleList.length = 0;
+            neighborBubbleList.length = 0;
             nInterfaces = neighbors[p].interfaces.length;
+            
             var bubbleSector = Math.atan((INTERFACE_RADIUS+1) / 
                                 ((NODE_RADIUS+1 + INTERFACE_RADIUS+1))) * 2;
             var angleToNeighbor = u.findAngleFromLine( node.x, node.y, _nodes[p].x, _nodes[p].y );
             
+            // We center the bubbles across an arc facing the current neighbor. 
+            // We start at one end of the arc and draw bubbles at each sector 'slice', incrementing
+            // the angle by 'bubbleSector' for each interface.
+            // Conveniently, the angles can simply be mirrored at the destination device, so we
+            // draw those at the same time. We keep a visited list to avoid overdraw.
             var bubbleIndex = ( nInterfaces - 1 ) / 2.0;
-            
             var srcAngle = angleToNeighbor - ( bubbleIndex * bubbleSector );      
             var dstAngle = angleToNeighbor + ( bubbleIndex * bubbleSector ) + Math.PI;     
             
             // Draw bubbles for each interface connected to the current neighbor
-            for( var i = 0; i < neighbors[p].interfaces.length; i++ ) {
+            for( var i = 0; i < nInterfaces; i++ ) {
                 collision = false;
                 srcPt = u.findPointOnCircle(    node.x, node.y, 
                                                 srcAngle, 
@@ -288,10 +325,11 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
 
                 // Collision check against previously drawn interface bubbles
                 var smallestDistance = collideDistance;
-                for( var j = 0 ; j < bubbleList.length ; j++ ) {
+                for( var j = 0 ; j < node.bubbleList.length ; j++ ) {
                 
                     bubbleDistance = u.findDistance(    srcPt.x, srcPt.y,
-                                                        bubbleList[j].x, bubbleList[j].y );
+                                                        node.bubbleList[j].x,
+                                                        node.bubbleList[j].y );
 
                     // We want to calculate the 'bump factor' against the closest bubble to 
                     // avoid overlaps
@@ -303,9 +341,9 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
                     }
                 }
 
-                // Push bubble up to avoid collision
+                // Push bubble outwards to avoid collision
+                // FIXME: Push bubble along link vector, not bubble angle vector?
                 var sinTerm = (1 - (smallestDistance / collideDistance)) * (Math.PI/2);
-                // console.log( "d:" + bubbleDistance + " smallest:" + smallestDistance + " sin:" + sinTerm );
                 var bubbleBump = ( Math.abs( Math.sin( sinTerm )) * collideDistance );
 
                 srcPt = u.findPointOnCircle(    node.x, node.y, 
@@ -339,13 +377,21 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
                         .lineTo( dstPt.x, dstPt.y)
                         .endStroke();
                 }
+
+                neighborBubbleList.push({   x: srcPt.x, 
+                                            y: srcPt.y, 
+                                            dstX: dstPt.x,
+                                            dstY: dstPt.y,
+                                            intName: neighbors[p].interfaces[i].intName });
                 
-                interfaceBubbleList.push({ x: srcPt.x, y: srcPt.y });
+                // Adjust the angle for the next interface bubble. Mirrored for the destination
+                // interface.
                 srcAngle += bubbleSector;
                 dstAngle -= bubbleSector;
             }           
             
-            bubbleList = bubbleList.concat( interfaceBubbleList );
+            
+            node.bubbleList = node.bubbleList.concat( neighborBubbleList );
         }
         _linkCntr.addChild( linkShape );
     }
@@ -364,6 +410,12 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
         this.nodeBmp = new createjs.Bitmap(this.nodeImg);
         this.nodeBmp;
         this.nodeBmp.name = name; // the bitmap catches the mouseup event
+
+        this.nodeTxtOut = new createjs.Text( name, "12px Arial", "#FFF" );
+        this.nodeTxtOut.textAlign = "center";
+        this.nodeTxtOut.x = this.nodeImg.width / 2;
+        this.nodeTxtOut.y = -NODE_RADIUS;
+        this.nodeTxtOut.outline = 2;
         
         this.nodeTxt = new createjs.Text( name, "12px Arial", "#000" ); 
         this.nodeTxt.textAlign = "center";
@@ -383,8 +435,6 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
                                             this.nodeImg.height/2, 
                                             NODE_RADIUS - 3).endFill().endStroke();       
                                             
-
-        
         this.nodeBubbles = new createjs.Shape();
         this.bubbleList = [];
         
@@ -394,6 +444,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
         this.nodeCntr.addChild( this.nodeBand );
         this.nodeCntr.addChild( this.nodeBubbles );
         this.nodeCntr.addChild( this.nodeBmp );
+        this.nodeCntr.addChild( this.nodeTxtOut );
         this.nodeCntr.addChild( this.nodeTxt );
         
         this.nodeCntr.x = this.x - this.nodeImg.width / 2 + 0.5;
@@ -402,14 +453,26 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
         this.nodeCntr.on( "pressup", function( evt ) {
             if( mouse.isDragging() ) {
                 
-                if( state.get() == "link" ) {
+                if( ui.getEditorMode() == "link" ) {
                     // We just stopped dragging in link mode, so check if we stopped at another 
                     // node. But don't link a node to itself, that would be silly.
+                    
+                    // The 'pressup' event is tied to the node that we started dragging on, so 
+                    // we need to do our own hit-testing.
                     var endObj = hitTestNodes( evt.stageX, evt.stageY );
                     
                     if( endObj && endObj.name && endObj.name != name ) {
-                        sim.getDeviceByHostName( name ).connectToHostName( endObj.name );
+                        
+                        var dstDev = sim.getDeviceByHostName( endObj.name );
+                        
+                        try {
+                            sim.getDeviceByHostName( name ).connectTo( dstDev );
+                        }
+                        catch( err ) {
+                            notify.write( err );
+                        }
                         _dirtyLinks = true;
+                        _dirtyUI = true;
                     }
                 }
             }
@@ -421,7 +484,9 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
         {
             mouse.down( evt.stageX, evt.stageY );
             
-            selectNode( n );
+            if( n != _selectedNode ) {
+                selectNode( n );
+            }
 
            // hidePopups();
         });
@@ -431,7 +496,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
             // Otherwise intended clicks are often interpreted as tiny drags
             mouse.move( evt.stageX, evt.stageY );
                         
-            var appState = state.get();
+            var appState = ui.getEditorMode();
             if( mouse.isDragging() ) {
             
                 if( appState == "add" || appState == "edit" ) {
@@ -458,10 +523,15 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
         });
         
         this.nodeCntr.on( "click", function( evt ) {
+        
             // We get 'click' events on mouse-up, regardless of dragging status
             if( !mouse.isDragging() ) {
                 // We were not dragging, so this is a legitimate click
-                if( state.get() == "del" ) {
+                
+                testPackets( n );
+                
+                if( ui.getEditorMode() == "del" ) {
+                
                     sim.deleteDevice( n.name )
                     deleteNode( n );
                     update();
@@ -482,6 +552,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
                 showPopup( "switch", pt2 );
                 */
             }
+
             mouse.up();
         });
         
@@ -500,9 +571,20 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
 
     }
     
+    Node.prototype.toJSON = function() {
+        
+        return { 
+            name: this.name,
+            icon: this.icon,
+            x:    this.x,
+            y:    this.y
+        }
+    }
+    
     Node.prototype.destroy = function() {
         
         this.nodeCntr.removeChild( this.nodeCirc );
+        this.nodeCntr.removeChild( this.nodeBand );
         this.nodeCntr.removeChild( this.nodeBubbles );
         this.nodeCntr.removeChild( this.nodeBmp );
         this.nodeCntr.removeChild( this.nodeTxt );        
@@ -526,8 +608,9 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
     
     function deleteNode( node ) {
     
-        node.destroy();
         _stage.removeChild( node.nodeCntr );
+        node.destroy();
+        
         delete _nodes[node.name];
         selectNode(null);
     }
@@ -563,10 +646,17 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
         _linkCntr.x = 0;
         _linkCntr.y = 0;
         _stage.addChild( _linkCntr );
+
+        // Create container to hold packet tweening shapes
+        _packetCntr = new createjs.Container();  
+        _packetCntr.x = 0;
+        _packetCntr.y = 0;
+        _stage.addChild( _packetCntr );
         
         _linkCursor = new createjs.Shape();
         _stage.addChild( _linkCursor );
         
+        createjs.Ticker.setFPS(30);
         createjs.Ticker.addEventListener( "tick", handleTick );
 
         update( true );     
@@ -574,6 +664,9 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
     
     function importView( viewObject ) {
         
+        if( viewObject.view ) {
+            throw "importModel: Missing required 'sim' definition.";
+        }
         _.forEach( viewObject.nodes, function( importNode ) {
 
             var newNode = new Node( importNode.name, importNode.icon, importNode.x, importNode.y );
@@ -588,15 +681,8 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
     function exportView() {
         var viewObject = {};
         
-        viewObject.nodes = {};
+        viewObject.nodes = _nodes;
 
-        for( var n in _nodes ) {
-            viewObject.nodes[n] = {};
-            viewObject.nodes[n].name  = _nodes[n].name;
-            viewObject.nodes[n].icon  = _nodes[n].icon;
-            viewObject.nodes[n].x     = _nodes[n].x;
-            viewObject.nodes[n].y     = _nodes[n].y;
-        }
         return viewObject;
     }
     
@@ -614,6 +700,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels ) {
         exportView: exportView,
         addNode:    addNode,
         deleteNode: deleteNode,
+        sendPacket: sendPacket,
         reset:      reset,
         update:     update,
         init:       init

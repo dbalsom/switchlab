@@ -15,9 +15,13 @@
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/bootstrap.css">
   <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="css/animation.css">
+  
   <link href='http://fonts.googleapis.com/css?family=Oswald' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Inconsolata:400,700' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet' type='text/css'>
+  
+  <link href='http://cdnjs.cloudflare.com/ajax/libs/ng-grid/2.0.11/ng-grid.min.css' rel='stylesheet' type='text/css'>
   
   <!-- modernizr only runs in head -->
   <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.7.1/modernizr.min.js"></script> 
@@ -35,23 +39,36 @@
   
   <div class="bodyDiv">
   
+    <div class="title-header" >SwitchLab</div>
     <div class="contentDiv" ng-controller="MainUIController">
 
-          <h2>SwitchLab</h2>
+          
 
-          <div class="canvasDiv" id="modal-container"  ng-controller="AlertController">
+          <div class="uiDiv" id="modal-container">
 
-          <sl-toolbar></sl-toolbar>
-
-            <div ng-controller="uiAccordionController" class="sl-accordion"  >
+            <sl-toolbar></sl-toolbar>
+ 
+            <div class="sl-notify-container">
+              <div ng-controller="uiNotifyController" >
+                <alert  ng-repeat="alert in alerts" 
+                        type="alert.type" 
+                        class="sl-notify notify-animate"
+                        >
+                  {{alert.msg}}
+                </alert>
+              </div>                
+            </div>
+            
+            <div ng-controller="uiAccordionController" class="sl-accordion">
               <accordion close-others="false">
               
                 <accordion-group 
                   ng-repeat="panel in panels" 
+                  class="scroll-down"
                   is-open="open" 
                   data-toggle="collapse">
 
-                  <accordion-heading  >
+                  <accordion-heading>
                     {{panel.name}}
                     <i  class="pull-right glyphicon" 
                         ng-class="{ 'glyphicon-chevron-down': open,
@@ -63,13 +80,16 @@
                 </accordion-group>
               </accordion>
             </div>
-          
-            <div>
+            
+       
+            
+            <div class="canvas-container">
+
               <canvas id="C" width="900" height="600" class="sim-canvas" ></canvas>
+              
             </div>
 
-              
-            
+
             
             <div class="popupDiv popover right"  id="switchPopup" style="display: none; position:absolute;">
               <div class="arrow"></div>
@@ -117,9 +137,9 @@
 
           <div id="tabs">
             <tabset>
-              <tab ng-repeat="tab in tabs" heading="{{tabs[$index]}}">
-                <div class="tabContainer">
-                  <pre class="pre-scrollable">Log output here!</pre>
+              <tab ng-repeat="tab in tabs" heading="{{tabs[$index]}}" class="slide-left">
+                <div class="tab-content-container" >
+                  <pre class="pre-scrollable"class="console-output" id="console-{{tab}}" ></pre>
                 </div>
               </tab>
             </tabset>
@@ -132,12 +152,17 @@
 
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
   <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular-animate.js"></script>
   <script src="http://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.10.0/ui-bootstrap-tpls.min.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/ng-grid/2.0.11/ng-grid.min.js"></script>
+    
   <script src="js/vendor/ui-utils.min.js"></script>
   <script src="http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.compat.min.js"></script>
   <script src="http://cdnjs.cloudflare.com/ajax/libs/EaselJS/0.7.1/easeljs.min.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/tweenjs/0.5.1/tweenjs.min.js"></script>
 
   <script src="js/plugins.js"></script>
+  <script src="js/vendor/extend.min.js"></script>
   <script src="js/vendor/chance.min.js"></script>
   
   <script src="js/app.js"></script>
@@ -149,6 +174,8 @@
   <script src="js/toolbar.js"></script>
   <script src="js/main.js"></script>
   <script src="js/canvas.js"></script>
+  
+  <script src="js/device.js"></script>
   <script src="js/sim.js"></script>
   <script src="js/util.js"></script>
 

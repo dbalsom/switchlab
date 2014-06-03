@@ -3,6 +3,7 @@
 "debug": "on",
 "images":
     [   { "name": "switch", "src": "img/switch.png" },
+        { "name": "host", "src": "img/host.png" },
         { "name": "bg", "src": "img/sim_bg.png" }
     ],
 "diagrams":
