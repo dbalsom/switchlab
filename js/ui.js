@@ -95,6 +95,35 @@ app.controller( 'uiAccordionController', [ '$scope', '$timeout', 'uiInfoPanels',
     }
 ]);
 
+app.controller( 'uiTabController', [ '$scope', '$timeout', 'sim', 'ui',
+    function( $scope, $timeout, sim, ui ) {
+    
+        $scope.devices = [];
+        $scope.tabs = [];
+        $scope.keys = [];
+        $scope.selectedSwitch = {};
+        
+        $scope.updateTabs = function() {
+            
+            $scope.devices = sim.getDeviceInfo();
+            $scope.tabs.length = 0;
+            $scope.keys.length = 0;
+            
+            for( var device in $scope.devices ) {
+                $scope.tabs.push( $scope.devices[device].name );
+                $scope.keys.push( $scope.devices[device].key );
+            }
+            //$scope.selectedSwitch = main.getSelectedSwitch();
+        };
+        
+        $scope.$watch( 'devices', function() {
+        
+            $timeout( ui.attachConsoles, 10 );
+            console.log( "Tabs changed, have: " + $scope.tabs.length + " tabs" );
+        }); 
+    }
+]);    
+
 // Panel Service delivers the data model to the accordion and data table controllers
 app.factory( 'uiInfoPanels', function() {
 
@@ -158,7 +187,9 @@ app.factory( 'uiInfoPanels', function() {
                                 columnDefs: columnDefs,
                                 headerRowHeight: 24,
                                 rowHeight: 20,
-                                multiSelect: false
+                                multiSelect: false,
+                                plugins: [new ngGridFlexibleHeightPlugin()]
+                                
                            };        
     }
     
@@ -236,13 +267,14 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels )
         return modalInstance.result;
     }
 
-    function selectDevice( selectionName ) {
+    function selectDevice( selectionKey ) {
     
-        var selectedDevice = sim.getDeviceByHostName( selectionName );
+        var selectedDevice = sim.getDeviceByKey( selectionKey );
+        var selectionName = selectedDevice.getHostName();
         
         var newPanel = new uiInfoPanels.Panel( "General", true );
         uiInfoPanels.addPanel( newPanel );
-        
+
         var nameValue = 
             new uiInfoPanels.InputValueItem(
                 {    
@@ -253,9 +285,16 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels )
                     max: 63,
                     validator: 
                         function( name ) {
-                            return  (name == selectionName) ||
-                                    sim.isValidHostName( name ) &&
-                                    sim.isUniqueHostName( name );
+                            var isValid = (name == selectionName) 
+                                            || sim.isValidHostName( name )
+                                            && sim.isUniqueHostName( name );
+                            if( isValid && ( name != selectionName )) {
+                                //throw new Error( "Stack trace me");
+                                //selectedDevice.setHostName( name );
+                                console.log( "updating in validator... hmm");
+                                updateTabs();
+                            }                                    
+                            return isValid;        
                         }
                 });
                                                   
@@ -280,10 +319,21 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels )
                          { field: 'vlan', displayName: "vlan", width: "15%" },
                          { field: 'hasPhysLink', displayName: "Link", width: "15%", cellTemplate: "template/link_cell.html" },
                          { field: '', displayName: '' }
+                         
                          ];
         var newItem = new uiInfoPanels.GridItem( selectedDevice.getInterfaces(), colDefs );
         newPanel.addItem( newItem );        
     
+    }
+    
+    function attachConsoles() {
+        
+        var devices = sim.getDevices();
+        
+        _.forEach( devices, function( device ) {
+        
+            device.devConsole.attachTo( device.key );
+        });
     }
     
     function updatePanels() {
@@ -292,7 +342,7 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels )
     }
     
     function updateTabs() {
-        var updateScope = angular.element('[ng-controller=MainUIController]').scope();
+        var updateScope = angular.element('[ng-controller=uiTabController]').scope();
         $timeout( function() { updateScope.updateTabs() }, 0, true ); 
     }
     
@@ -315,6 +365,7 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels )
         selectDevice:   selectDevice,
         updatePanels:   updatePanels,
         updateTabs:     updateTabs,
+        attachConsoles: attachConsoles,
         msgBox:         msgBox
     }
 });

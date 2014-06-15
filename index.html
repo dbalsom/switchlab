@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/bootstrap.css">
   <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="css/console.css">
   <link rel="stylesheet" href="css/animation.css">
   
   <link href='http://fonts.googleapis.com/css?family=Oswald' rel='stylesheet' type='text/css'>
@@ -64,7 +65,7 @@
               
                 <accordion-group 
                   ng-repeat="panel in panels" 
-                  class="scroll-down"
+                  
                   is-open="open" 
                   data-toggle="collapse">
 
@@ -90,7 +91,7 @@
             </div>
 
 
-            
+            <!--
             <div class="popupDiv popover right"  id="switchPopup" style="display: none; position:absolute;">
               <div class="arrow"></div>
               
@@ -130,16 +131,16 @@
               </table>
               </form>
             </div>          
-
+            -->
 
             
           </div> <!-- canvasDiv -->
 
-          <div id="tabs">
+          <div id="tabs" ng-controller="uiTabController" >
             <tabset>
-              <tab ng-repeat="tab in tabs" heading="{{tabs[$index]}}" class="slide-left">
+              <tab ng-repeat="tab in tabs" heading="{{tab}}" class="slide-left">
                 <div class="tab-content-container" >
-                  <pre class="pre-scrollable"class="console-output" id="console-{{tab}}" ></pre>
+                  <pre class="pre-scrollable console-output" id="console-{{keys[$index]}}" ></pre>
                 </div>
               </tab>
             </tabset>
@@ -153,9 +154,11 @@
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
   <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js"></script>
   <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular-animate.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular-sanitize.js"></script>
   <script src="http://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.10.0/ui-bootstrap-tpls.min.js"></script>
   <script src="http://cdnjs.cloudflare.com/ajax/libs/ng-grid/2.0.11/ng-grid.min.js"></script>
-    
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/ng-grid/2.0.11/ng-grid-flexible-height.min.js"></script>
+  
   <script src="js/vendor/ui-utils.min.js"></script>
   <script src="http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.compat.min.js"></script>
   <script src="http://cdnjs.cloudflare.com/ajax/libs/EaselJS/0.7.1/easeljs.min.js"></script>
@@ -168,17 +171,18 @@
   <script src="js/app.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/controllers.js"></script>
+  <script src="js/console.js"></script>
   <script src="js/data_table.js"></script>
   <script src="js/modal.js"></script>
   <script src="js/msgbox.js"></script>
   <script src="js/toolbar.js"></script>
   <script src="js/main.js"></script>
   <script src="js/canvas.js"></script>
-  
   <script src="js/device.js"></script>
   <script src="js/sim.js"></script>
   <script src="js/util.js"></script>
-
+  <script src="js/list.js"></script>
+  
   <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
   <!--
   <script>

@@ -81,7 +81,7 @@ app.factory( 'mouse', function() {
     };
 });
 
-app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notify ) {
+app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notify, LinkedList ) {
 
     'use strict';
     var CANVAS_ID = "C";
@@ -96,24 +96,23 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
     var _dirtyLinks = false;
     var _dirtyUI = false;
 
-    var _linkCntr = {};    
+    var _mainLinkCntr = {};    
     var _packetCntr = {};
     var _linkCursor = {};
     var _bubbleCntr = {};
 
     
     var _nodes = {};
+    var _links = {};
     var _nodeCount = 0;
 
-    var _tweens = [];
+    var _packetList;
     var _animating = false;
     
     var _selectedNode;
     
     var _dragging = false;
 
-
-    
     function hitTestNodes( x, y ) {
         for( var n in _nodes ) {
             if( u.testInCircle( x, y, _nodes[n].x, _nodes[n].y, HIT_DISTANCE )) {
@@ -132,7 +131,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         }
         
         if( _dirtyLinks ) {
-            updateLinks();
+            drawLinks();
             _dirtyLinks = false;
         }
         
@@ -140,7 +139,6 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
             _stage.update( evt );
             _dirty = false;
         }  
-        
     }
     
     function handleBGClick( evt ) {
@@ -162,7 +160,8 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                 
         if( sim.addDevice( newDevice ) ) {
        
-            var newNode = new Node( newDevice.getHostName(), type, pt.x, pt.y );
+            var newNode = new Node( newDevice.getKey(), newDevice.getHostName(), type, pt.x, pt.y );
+            
             addNode( newNode );
             selectNode( newNode );
             
@@ -171,7 +170,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         }
         else {
         
-            console.log("Device creation failed: " + type );
+            notify.write( "Device creation failed: " + type );
         }
     }; 
     
@@ -184,23 +183,54 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         }
         _dirty = true;
     }
-    
-    function updateLinks() {
+        
+    function hashLink( srcDev, srcInt, dstDev, dstInt )
+    {
+        var dev1, int1, dev2, int2;
+        
+        if( srcDev < dstDev ) {
+            dev1 = srcDev;
+            int1 = srcInt;
+            dev2 = dstDev;
+            int2 = dstInt;
+        }
+        else {
+            dev1 = dstDev;
+            int1 = dstInt;
+            dev2 = srcDev;
+            int2 = srcInt;
+        }
+        return dev1 + "." + int1 + ":" + dev2 + "." + int2;
+    }
+        
+    function updateNeighbors() {
+        
+        for( var nodeKey in _nodes ) {
+            var node      = _nodes[nodeKey];
+            
+            if( node ) { 
+                node.updateNeighbors();
+            }
+        }
+    }
+        
+    function drawLinks() {
 
-        _linkCntr.removeAllChildren();
+        _mainLinkCntr.removeAllChildren();
         var visitedList = [];
         
         if( _nodeCount >= 2 ) {
-            for( var node in _nodes ) { 
-                drawLinksFrom( _nodes[node], visitedList );
-                visitedList[node] = true;
+            for( var nodeKey in _nodes ) { 
+            
+                drawLinksFrom( _nodes[nodeKey], visitedList );
+                visitedList[nodeKey] = true;
             }
         }
     }    
     
     function testPackets( node ) {
         if( node ) {
-            var device = sim.getDeviceByHostName( node.name );
+            var device = sim.getDeviceByKey( node.key );
             if( device ) {
                 var neighbors = device.getNeighbors();
             }
@@ -208,11 +238,13 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
             
                 for( var iface in neighbors[p].interfaces ) {
                 
-                    console.log( "Sending packet from interface " + neighbors[p].interfaces[iface].intName );
+                    //console.log( "Sending packet from interface " + neighbors[p].interfaces[iface].intName );
                     sendPacket( _selectedNode, neighbors[p].interfaces[iface].intName, _nodes[p] );
                 }
                 
+
             }
+            device.devConsole.log( "Sending testing packets...").endl();
         }
     }
 
@@ -230,7 +262,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
             // Now change color for newly selected node
             _selectedNode.setBandColor( "DarkSalmon", "white" );
             
-            ui.selectDevice( _selectedNode.name );
+            ui.selectDevice( _selectedNode.key );
         }
 
         ui.updatePanels();
@@ -250,25 +282,71 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                 
         var packetShape = new createjs.Shape();
         
+        /*
         packetShape.graphics.setStrokeStyle(1)
                             .beginStroke("black")
                             .beginFill("cyan")
                             .drawCircle( 0, 0, 8 )
                             .endFill()
+                            .endStroke();*/
+                            
+        packetShape.graphics.setStrokeStyle(1)
+                            .beginStroke("black")
+                            .beginFill("cyan")
+                            .moveTo( -13, 0 )
+                            .bezierCurveTo( -.3,  8, .3, 8,   13, 0 )
+                            .bezierCurveTo( .3,  -8, -.3, -8,  -13, 0 )
+                            .endFill()
                             .endStroke();
+                            
+        /*
         packetShape.x = srcBubble.x;
         packetShape.y = srcBubble.y;
+        packetShape.rotation = srcBubble.angle * 57.2957795131;
+        */
+        packetShape.x = 0;
+        packetShape.y = 0;
         
+        //console.log( "Tween from " + srcNode.x + "," + srcNode.y + " to " + dstNode.x + "," + dstNode.y );
 
-        console.log( "Tween from " + srcNode.x + "," + srcNode.y + " to " + dstNode.x + "," + dstNode.y );
+        var midpoint = u.findMidpoint( srcBubble.x, srcBubble.y, srcBubble.dstX, srcBubble.dstY );
 
+        /*
         createjs.Tween.get( packetShape )
-                      .to( { x: srcBubble.dstX, y: srcBubble.dstY }, 1000, createjs.Ease.getPowInOut(2.5) )
-                      .call( function() { _animating = false; } );
+              .to( { x: midpoint.x, y: midpoint.y, scaleX:1.5 }, 500, createjs.Ease.getPowIn(2.5) )
+              .to( { x: srcBubble.dstX, y: srcBubble.dstY, scaleX:1}, 500, createjs.Ease.getPowOut(2.5) )
+              .call( function() { 
+                        
+                        srcBubble.linkCntr.removeChild( packetShape );
+                        _packetList.remove( packetShape );
+                        
+                        //deletePacket( packetShape )
+                     });
+        */
+
         
-        _packetCntr.addChild( packetShape );
-        _tweens.push( packetShape );
+        srcBubble.linkCntr.addChild( packetShape );
+        packetShape.scaleX = 1 / srcBubble.linkCntr.scaleX;
+        
+        createjs.Tween.get( packetShape )
+                      .to( { x: 100, y: 0 }, 1000, createjs.Ease.getPowInOut(2.5) )
+                      .call( function() { 
+                       
+                            srcBubble.linkCntr.removeChild( packetShape );
+                            _packetList.remove( packetShape );
+                      });
+        
+        
+        //_packetCntr.addChild( packetShape );
+        _packetList.push( packetShape );
+        
         _animating = true;
+    }
+    
+    function deletePacket( packetShape ) {
+    
+        _packetList.remove( packetShape );   
+        _packetCntr.removeChild( packetShape );
     }
     
     function drawLinksFrom( node, visitedList ) {
@@ -284,8 +362,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         var neighborBubbleList = [];
         var angleStart;
         var angleEnd;
-        var bubbleDistance;
-        var bubbleBump;
+
         var collisionAngle;
         var collision = false;
         var collideDistance = ((INTERFACE_RADIUS + 2) * 2 );
@@ -296,22 +373,26 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         var device = sim.getDeviceByHostName( node.name );
         if( !device ) return;
         
-        var neighbors = device.getNeighbors();
+        if( !node._neighbors ) {
+            node.updateNeighbors();
+        }
         
-        for( var p in neighbors ) {
+        for( var n in node._neighbors ) {
             
             neighborBubbleList.length = 0;
-            nInterfaces = neighbors[p].interfaces.length;
+            nInterfaces = node._neighbors[n].interfaces.length;
             
+            // bubbleSector is the angle between interface bubbles. We pad values by 1 to account
+            // for the stroke weight (maybe should make this variable?)
             var bubbleSector = Math.atan((INTERFACE_RADIUS+1) / 
                                 ((NODE_RADIUS+1 + INTERFACE_RADIUS+1))) * 2;
-            var angleToNeighbor = u.findAngleFromLine( node.x, node.y, _nodes[p].x, _nodes[p].y );
+            var angleToNeighbor = u.findAngleFromLine( node.x, node.y, _nodes[n].x, _nodes[n].y );
             
             // We center the bubbles across an arc facing the current neighbor. 
             // We start at one end of the arc and draw bubbles at each sector 'slice', incrementing
             // the angle by 'bubbleSector' for each interface.
             // Conveniently, the angles can simply be mirrored at the destination device, so we
-            // draw those at the same time. We keep a visited list to avoid overdraw.
+            // can easily draw a line to where the destination bubble will be.
             var bubbleIndex = ( nInterfaces - 1 ) / 2.0;
             var srcAngle = angleToNeighbor - ( bubbleIndex * bubbleSector );      
             var dstAngle = angleToNeighbor + ( bubbleIndex * bubbleSector ) + Math.PI;     
@@ -323,7 +404,13 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                                                 srcAngle, 
                                                 NODE_RADIUS+1 + INTERFACE_RADIUS );
 
+                dstPt = u.findPointOnCircle(    _nodes[n].x, _nodes[n].y, 
+                                                dstAngle,
+                                                NODE_RADIUS+1 + INTERFACE_RADIUS );                                                
+                                                
                 // Collision check against previously drawn interface bubbles
+                var bubbleDistance;
+                var bubbleBump;
                 var smallestDistance = collideDistance;
                 for( var j = 0 ; j < node.bubbleList.length ; j++ ) {
                 
@@ -341,17 +428,20 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                     }
                 }
 
-                // Push bubble outwards to avoid collision
+                // If bubbles collided, push current bubble outwards to avoid collision
                 // FIXME: Push bubble along link vector, not bubble angle vector?
-                var sinTerm = (1 - (smallestDistance / collideDistance)) * (Math.PI/2);
-                var bubbleBump = ( Math.abs( Math.sin( sinTerm )) * collideDistance );
-
-                srcPt = u.findPointOnCircle(    node.x, node.y, 
-                                                srcAngle, 
-                                                NODE_RADIUS+1 + INTERFACE_RADIUS + bubbleBump );                
-                dstPt = u.findPointOnCircle(    _nodes[p].x, _nodes[p].y, 
-                                                dstAngle,
-                                                NODE_RADIUS+1 + INTERFACE_RADIUS );
+                if( collision ) {
+                    var sinTerm = (1 - (smallestDistance / collideDistance)) * (Math.PI/2);
+                    var bubbleBump = ( Math.abs( Math.sin( sinTerm )) * collideDistance );
+                    /*
+                    srcPt = u.findPointOnCircle(    node.x, node.y, 
+                                                    srcAngle, 
+                                                    NODE_RADIUS+1 + INTERFACE_RADIUS + bubbleBump );                      
+                    */
+                    srcPt = u.findPointOnLine( srcPt.x, srcPt.y, dstPt.x, dstPt.y, bubbleBump );
+                }
+              
+                
                 
                 var srcPtLocal = srcBubbleShape.globalToLocal( srcPt.x, srcPt.y );
                 var dstPtLocal = srcBubbleShape.globalToLocal( dstPt.x, dstPt.y );
@@ -369,34 +459,48 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                     .endFill()
                     .endStroke();
                 
-                if( !visitedList[p] ) {
-                    // Don't draw segment lines twice
-                    linkShape.graphics.moveTo( srcPt.x, srcPt.y )
+                // Draw the network segment line only if this node hasn't been visited yet
+                if( !visitedList[n] ) {
+                    linkShape.graphics
                         .beginStroke("black")
                         .setStrokeStyle(2)
+                        .moveTo( srcPt.x, srcPt.y )
                         .lineTo( dstPt.x, dstPt.y)
                         .endStroke();
                 }
-
+                
+                var distanceToNeighbor = u.findDistance( srcPt.x, srcPt.y, dstPt.x, dstPt.y );
+                var iface = node._neighbors[n].interfaces[i];
+                
+                iface.linkCntr.x = srcPt.x;
+                iface.linkCntr.y = srcPt.y;
+                iface.linkCntr.rotation = angleToNeighbor * 57.2957795131;
+                iface.linkCntr.scaleX = distanceToNeighbor / 100;
+                
+                for( var c = 0; c < iface.linkCntr.children.length; c++ ) {
+                
+                    iface.linkCntr.children[c].scaleX = 1 / iface.linkCntr.scaleX;
+                }                
+                
                 neighborBubbleList.push({   x: srcPt.x, 
                                             y: srcPt.y, 
                                             dstX: dstPt.x,
                                             dstY: dstPt.y,
-                                            intName: neighbors[p].interfaces[i].intName });
+                                            angle: angleToNeighbor,
+                                            linkCntr: iface.linkCntr,
+                                            intName: iface.intName });
                 
                 // Adjust the angle for the next interface bubble. Mirrored for the destination
                 // interface.
                 srcAngle += bubbleSector;
                 dstAngle -= bubbleSector;
             }           
-            
-            
             node.bubbleList = node.bubbleList.concat( neighborBubbleList );
         }
-        _linkCntr.addChild( linkShape );
+        _mainLinkCntr.addChild( linkShape );
     }
     
-    function Node( name, icon, x, y ) {
+    function Node( key, name, icon, x, y ) {
 
         var n = this; // Pull this node into closure scope for container events (fixme)
         this.name = name;
@@ -404,12 +508,15 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         this.x = x;
         this.y = y;
         
+        this._neighbors;
+        this._linkContainers = [];
+        this.key = key;
+        
         this.nodeImg = img.get(icon);
         var w = this.nodeImg.width;
         var h = this.nodeImg.height;
         this.nodeBmp = new createjs.Bitmap(this.nodeImg);
         this.nodeBmp;
-        this.nodeBmp.name = name; // the bitmap catches the mouseup event
 
         this.nodeTxtOut = new createjs.Text( name, "12px Arial", "#FFF" );
         this.nodeTxtOut.textAlign = "center";
@@ -440,12 +547,8 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         
         this.nodeCntr = new createjs.Container();  
         this.nodeCntr.name = name;
-        this.nodeCntr.addChild( this.nodeCirc );
-        this.nodeCntr.addChild( this.nodeBand );
-        this.nodeCntr.addChild( this.nodeBubbles );
-        this.nodeCntr.addChild( this.nodeBmp );
-        this.nodeCntr.addChild( this.nodeTxtOut );
-        this.nodeCntr.addChild( this.nodeTxt );
+        this.nodeCntr.addChild( this.nodeCirc, this.nodeBand, this.nodeBubbles, this.nodeBmp,
+                                this.nodeTxtOut, this.nodeTxt );
         
         this.nodeCntr.x = this.x - this.nodeImg.width / 2 + 0.5;
         this.nodeCntr.y = this.y - this.nodeImg.height / 2 + 0.5;        
@@ -459,14 +562,17 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                     
                     // The 'pressup' event is tied to the node that we started dragging on, so 
                     // we need to do our own hit-testing.
-                    var endObj = hitTestNodes( evt.stageX, evt.stageY );
+                    var endNode = hitTestNodes( evt.stageX, evt.stageY );
                     
-                    if( endObj && endObj.name && endObj.name != name ) {
+                    if( endNode && endNode.name && endNode.name != name ) {
                         
-                        var dstDev = sim.getDeviceByHostName( endObj.name );
+                        var dstDev = sim.getDeviceByHostName( endNode.name );
                         
                         try {
                             sim.getDeviceByHostName( name ).connectTo( dstDev );
+                            // Important to update neighbors for both source and destination node
+                            n.updateNeighbors();
+                            endNode.updateNeighbors();
                         }
                         catch( err ) {
                             notify.write( err );
@@ -528,15 +634,18 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
             if( !mouse.isDragging() ) {
                 // We were not dragging, so this is a legitimate click
                 
-                testPackets( n );
-                
                 if( ui.getEditorMode() == "del" ) {
                 
-                    sim.deleteDevice( n.name )
+                    sim.deleteDevice( n.key )
                     deleteNode( n );
+                    updateNeighbors();                  
+                    
                     update();
                     ui.updatePanels();
                     ui.updateTabs();
+                }
+                else { 
+                    testPackets( n );
                 }
                 
                 var pt;
@@ -557,6 +666,60 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         });
         
 
+    }
+    
+    Node.prototype.attach = function( key ) {
+        
+        this._device = sim.getDeviceByKey( key );
+        if( !this._device ) {
+            return false;
+        }
+        updateNeighbors();
+        return true;
+    }
+    
+    // We maintain a EaselJS container object for each connected segment a node has to hold the
+    // packet shapes as they travel along a segment. Upon updating neighbors, we want to remove 
+    // any old containers and create any new ones needed.
+    Node.prototype.updateNeighbors = function() {
+        
+        if( !this._device ) {
+            throw new Error("updateNeighbors: Node not attached.");
+        }
+
+        var nInterfaces;
+        
+        // Go through the old neighbor list and delete link containers. It would be more efficient
+        // to only remove / add them as necessary instead of doing a complete reset... TODO? 
+        for( var n in this._neighbors ) {
+            
+            nInterfaces = this._neighbors[n].interfaces.length;
+            for( var i = 0; i < nInterfaces; i++ ) {
+            
+                var iface = this._neighbors[n].interfaces[i];
+                
+                if( iface.linkCntr ) {
+                    iface.linkCntr.removeAllChildren();
+                    _packetCntr.removeChild( iface.linkCntr );
+                }
+            }
+        }
+
+        // Now that the old link containers are gone, we can get the updated neighbor list
+        this._neighbors = this._device.getNeighbors();
+        
+        // And create the new containers
+        for( var n in this._neighbors ) {
+            
+            nInterfaces = this._neighbors[n].interfaces.length;
+            for( var i = 0; i < nInterfaces; i++ ) {
+                
+                var iface = this._neighbors[n].interfaces[i];
+                
+                iface.linkCntr = new createjs.Container();
+                _packetCntr.addChild( iface.linkCntr );
+            }
+        }
     }
     
     Node.prototype.setBandColor = function( strokeColor, fillColor ) {
@@ -582,6 +745,8 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
     }
     
     Node.prototype.destroy = function() {
+        delete this._device;
+        this._neighbors.length = 0;
         
         this.nodeCntr.removeChild( this.nodeCirc );
         this.nodeCntr.removeChild( this.nodeBand );
@@ -592,14 +757,18 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
     
     function addNode( node ) {
         
-        if( !node || !node.name ) {
-            return;
+        if( !node || !node.name || !node.key ) {
+            throw new Error( "Invalid Node name" );
         }
-        if( _nodes[node.name] ) {
-            return;
+        if( _nodes[node.key] ) {
+            throw new Error( "Node name collision" );
         }
         
-        _nodes[node.name] = node;
+        if( !node.attach( node.key ) ) {
+            throw new Error( "Failed to attach node" );
+        }
+        
+        _nodes[node.key] = node;
         _nodeCount++;
         
         _stage.addChild( node.nodeCntr );
@@ -611,7 +780,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         _stage.removeChild( node.nodeCntr );
         node.destroy();
         
-        delete _nodes[node.name];
+        delete _nodes[node.key];
         selectNode(null);
     }
     
@@ -625,9 +794,13 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
     }
     
     function init(id) {
-    
+
         _canvas = document.getElementById(id);
         _DC = _canvas.getContext("2d"); 
+        
+        // Why you'd want to let canvas clicks select text in the first place, I have no idea.
+        // But yeah, prevent that.
+        _canvas.onselectstart = function () { return false; }
 
         _stage = new createjs.Stage( _canvas );
         _stage.enableMouseOver();
@@ -636,16 +809,16 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         // This shape also serves as event handler for the sim workspace
         var bg = new createjs.Shape();
         bg.graphics.beginStroke("#000").setStrokeStyle(1).beginBitmapFill( img.get("bg") );
-        bg.graphics.drawRect(0,0,_canvas.width-1.5, _canvas.height-1.5).endStroke().endFill();
+        bg.graphics.drawRect( 0, 0, _canvas.width - .5, _canvas.height - .5 ).endStroke().endFill();
         bg.on( "click", handleBGClick );
 
         _stage.addChild( bg );
      
         // Create container to hold network segment shapes
-        _linkCntr = new createjs.Container();  
-        _linkCntr.x = 0;
-        _linkCntr.y = 0;
-        _stage.addChild( _linkCntr );
+        _mainLinkCntr = new createjs.Container();  
+        _mainLinkCntr.x = 0;
+        _mainLinkCntr.y = 0;
+        _stage.addChild( _mainLinkCntr );
 
         // Create container to hold packet tweening shapes
         _packetCntr = new createjs.Container();  
@@ -656,6 +829,9 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         _linkCursor = new createjs.Shape();
         _stage.addChild( _linkCursor );
         
+        _packetList = new LinkedList();        
+        
+        createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED;
         createjs.Ticker.setFPS(30);
         createjs.Ticker.addEventListener( "tick", handleTick );
 
@@ -664,14 +840,22 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
     
     function importView( viewObject ) {
         
-        if( viewObject.view ) {
-            throw "importModel: Missing required 'sim' definition.";
+        if( !viewObject.nodes ) {
+            throw "importModel: Missing required 'nodes' definition.";
         }
-        _.forEach( viewObject.nodes, function( importNode ) {
+        
+        for( var key in viewObject.nodes ) {
+        
+            var importNode = viewObject.nodes[key];
 
-            var newNode = new Node( importNode.name, importNode.icon, importNode.x, importNode.y );
+            var newNode = new Node( key, 
+                                    importNode.name, 
+                                    importNode.icon, 
+                                    importNode.x, 
+                                    importNode.y );
+            
             addNode( newNode );
-        });
+        }
 
         ui.updatePanels();
         ui.updateTabs();

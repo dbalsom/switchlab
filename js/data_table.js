@@ -9,17 +9,24 @@ app.controller('TableController', ['$scope',
 app.controller('TableInstanceController', ['$scope', 'uiInfoPanels',
     function( $scope, uiInfoPanels ) {
         
-    $scope.tableItems = uiInfoPanels.getPanelItems( $scope.$parent.$index );
-    $scope.status = {};
-   // $scope.open = true;
+        $scope.tableItems = uiInfoPanels.getPanelItems( $scope.$parent.$index );
+
+    }
+]);
+
+app.controller('InputValueController', ['$scope',
+    function( $scope ) {
     
-    $scope.getTableHeight = function(item) {
-        //console.log("height");
-        return { height: (item.array.length * 21 + 24) + "px" };
-    
-    };
-    
-}]);
+        $scope.$watch( 'item.value', function(newVal, oldVal, scope) {
+            if( scope.item.$valid ) {
+                 console.log( "You may touch my nethers.");
+            }
+            else {
+                    console.log( "I HAVE MURDERED MEN FOR LESS" );
+            }
+        }); 
+    }
+]);
 
 app.directive('slDatatable', function() {
 

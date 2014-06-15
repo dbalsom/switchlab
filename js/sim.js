@@ -72,7 +72,6 @@ app.factory( 'mac', function()
     }
     
     function isValid( mac ) {
-
         // Replace any separator characters
         mac = mac.replace( /[\.:-]/g, '' ).toUpperCase();
               
@@ -87,18 +86,22 @@ app.factory( 'mac', function()
         release:    release,
         isTaken:    isTaken,
         isValid:    isValid
-        
-    
-    
     }
-
 });
 
 app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterface )
 {
     'use strict';
     
-    var _devices = {};
+    // Each device is primarily identified by its hash key into the 'devices' object.
+    var _devices = Object.create(null);
+    
+    function createKey() {
+        do {
+            var key = chance.hash({length: 6});
+        } while( _devices[key] ); // We loop on the odd chance we have a collision
+        return key;
+    }
     
     function getUniqueHostName( name ) {
 
@@ -110,16 +113,15 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
         }
         else do { 
             // Otherwise, generate a random unique hostname
-            hostName = chance.city().toLowerCase();
+            hostName = chance.word({syllables: 3});
         } while( !isValidHostName( hostName ) && !isUniqueHostName( hostName ));
         
         return hostName;
     }
         
-
-    
     function isUniqueHostName( testName ) {
-        return ( !_devices[testName.toLowerCase()] );
+        //return ( !_devices[testName.toLowerCase()] );
+        return true;
     }
     
     function isValidHostName( testName ) {
@@ -133,7 +135,11 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
     }
     
     function getDeviceByHostName( name ) {
-        return _devices[name];
+        return _.find( _devices, { 'name': name });
+    }
+    
+    function getDeviceByKey( key ) {
+        return _devices[key];
     }
     
     function createDevice( type ) {
@@ -143,13 +149,12 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
             
             case 'switch':
             
-                newDevice = new SwitchDevice( { name: getUniqueHostName(), MAC: mac.getUnique() } );
+                newDevice = new SwitchDevice( { key: createKey(), name: getUniqueHostName(), MAC: mac.getUnique() } );
                 break;
             case 'host':
             
-                newDevice = new HostDevice( { name: getUniqueHostName(), MAC: mac.getUnique() } );
+                newDevice = new HostDevice( { key: createKey(), name: getUniqueHostName(), MAC: mac.getUnique() } );
                 break;
-        
         }
     
         return newDevice;
@@ -159,75 +164,92 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
         
         if( !device ) return false;
         
-        var name = device.getHostName();
+        var key = device.getKey();
     
-        if( isValidHostName( name ) && isUniqueHostName( name ) ) {
-            _devices[name] = device;
+        if( !_devices[key] ) {
+            _devices[key] = device;
             return true;
         }
-    
-        return false;
+        else {
+            throw new Error( "Device with key "+key+" already exists." );
+        }
     };
 
     function deleteDevice( device ) {
-        var devName;
+        var devKey;
         if( typeof device == 'string' ) {
-            devName = device;
+            devKey = device;
         }
         else {
-            devName = device.getHostName()
+            devKey = device.getKey()
         }
         
-        if( _devices[ devName ] ) { 
-            _devices[ devName ].destroy();
-            delete _devices[ devName ];
+        if( _devices[ devKey ] ) { 
+            _devices[ devKey ].destroy();
+            delete _devices[ devKey ];
+            return true;
         }
+        
+        throw new Error( "deleteDevice: Invalid device: " + devKey );
+        return false;
     }
   
+    function getDeviceInfo() {
+        var infoList = [];
+        
+        _.forEach( _devices, function( device ) {
+            infoList.push({ name: device.getHostName(), key: device.getKey() });
+        });
+        return infoList;
+    }
+    
     function getDeviceNames() {
-        var list = [];
+        var nameList = [];
         
-        list.length = 0;
-        for( var device in _devices ) {
-        
-            if( device != 'length' ) {
-                list.push( device );
-            }
-        }
-        return list;
-    };
+        _.forEach( _devices, function( device ) {
+            nameList.push( device.getHostName() );
+        });
+        return nameList;
+    }
+    
+    function getDevices() {
+    
+        return _devices;
+    }
     
     function importModel( modelObject ) {
 
+        var conf = {};
+        var key;
         // Import pass #1. Create devices and interfaces
-        
         if( !modelObject.devices ) {
-            throw "importModel: Missing required 'devices' definition.";
+            throw new Error( "importModel: Missing required 'devices' definition." );
         }
 
-        _.forEach( modelObject.devices, function( importDevice ) {
-            var conf = {};
-            
+        for( key in modelObject.devices ) {
+            var importDevice = modelObject.devices[key];
+           
             if( typeof importDevice.name === "undefined" 
                 || typeof importDevice.MAC === "undefined" ) {
                 
-                throw "importModel: required device parameter missing";
+                throw new Error( "importModel: required device parameter missing" );
             }
+            
+            conf.key  = key;
             conf.name = importDevice.name,
             conf.MAC  = mac.request( importDevice.MAC );
             conf.maxInterfaces = importDevice.maxInterfaces;
             
             var newDev = new SwitchDevice( conf );
             addDevice( newDev );
+            
             _.forEach( importDevice.interfaces, function( importInterface ) {
-                
                 var newInterface = new NetInterface( newDev, importInterface.name );
                 
                 newInterface.fromJSON( importInterface );
                 newDev.addInterface( newInterface );
-                
             });
-        });
+        }
         
         // Import pass #2. Now that all devices and interfaces are created, we can connect them up.
         _.forEach( modelObject.devices, function( importDevice ) {
@@ -244,8 +266,8 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
                         var dstArgs = importInterface.linkedTo.split('.');
                         if( dstArgs.length == 2 ) {
                             var dstIntName = dstArgs[0];
-                            var dstDevName = dstArgs[1];
-                            var dstDev = getDeviceByHostName( dstDevName );
+                            var dstDevKey  = dstArgs[1];
+                            var dstDev = getDeviceByKey( dstDevKey );
                             
                             var srcInt = srcDev.getInterface( importInterface.name );
                             var dstInt = dstDev.getInterface( dstIntName );
@@ -278,8 +300,11 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
         createDevice:           createDevice,
         addDevice:              addDevice,
         deleteDevice:           deleteDevice,
+        getDevices:             getDevices,
+        getDeviceInfo:          getDeviceInfo,
         getDeviceNames:         getDeviceNames,
         getDeviceByHostName:    getDeviceByHostName,
+        getDeviceByKey:         getDeviceByKey,
         isValidHostName:        isValidHostName,
         isUniqueHostName:       isUniqueHostName,
         reset:                  reset

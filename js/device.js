@@ -1,5 +1,5 @@
 
-app.factory( 'Device', function( NetInterface ) 
+app.factory( 'Device', function( NetInterface, DeviceConsole ) 
 {
     'use strict';
 
@@ -16,24 +16,45 @@ app.factory( 'Device', function( NetInterface )
         this.maxInterfaces = 0;
         this.interfaces = [];
        
-        this.name = "Device";
         this.type = "device";
-                
+        
         this.constructor = function( conf ) {
         
-            this.name = conf.name;
+            this.key  = conf.key;
+            this.name = conf.name ? conf.name : "Device";
             this.MAC  = conf.MAC;
+            
+            this.devConsole = new DeviceConsole( conf.key );
             this.maxInterfaces = conf.maxInterfaces ? conf.maxInterfaces : 0;
+        };
+        
+        this.getKey = function() {
+            return this.key;
         };
         
         this.getMAC = function() {
             return this.MAC;            
         };
         
+        this.setHostName = function( name ) {
+            this.name = name;        
+        };
+        
         this.getHostName = function() {
             return this.name;
         }; 
 
+        this.toJSON = function() {
+            return { 
+                name: this.name,
+                MAC:    this.MAC,
+                maxInterfaces:    this.maxInterfaces,
+                interfaces: this.interfaces
+            }
+        
+        };
+        
+        
         this.getNeighbors = function () {
     
             var neighbors = {};
@@ -50,6 +71,7 @@ app.factory( 'Device', function( NetInterface )
                         }
                         neighbors[neighborName].interfaces
                             .push({ intName: this.interfaces[i].name,
+                                    intIndex: i,
                                     devName: neighborName });
                     }
                 }
@@ -101,7 +123,6 @@ app.factory( 'Device', function( NetInterface )
             return null;
         };
 
-        
         this.getInterfaces = function() {
             return this.interfaces;
         };
@@ -125,26 +146,12 @@ app.factory( 'Device', function( NetInterface )
                 dstInterface = dstDevice.getAvailableInterface();
             }
             
-            this.log( "Connected to: <b>" + dstDevice.name + "</b>" );
+            //this.devConsole.log( "Connected to: <b>" + dstDevice.name + "</b>" ).endl();
+            this.devConsole.log( "Connected to: "  ).log( dstDevice.name, "red underline" ).endl();
             srcInterface.connectTo( dstInterface );
             return true;
         };
-        
-        this.log = function( text ) {
-            
-            //_logFile.push( text );
-            var selector = "#console-" + this.name;
-            console.log( "Trying to find: " + selector );
-            var devconsole = $(selector);
-            
-            if( devconsole.length ) { 
-                console.log( "Found console: " + this.name );
-                devconsole.append( text + '\n').scrollTop( devconsole.prop("scrollHeight"));
-            }
-            
-            
-        };
-        
+       
         this.destroy = function() {
             for( var i = 0 ; i < this.interfaces.length; i++ ) {
                 this.interfaces[i].destroy();
@@ -168,9 +175,8 @@ app.factory( 'SwitchDevice', function( Device )
         this.constructor = function(conf) {
             this.super(conf); // Call base class constructor
             this.type = "switch";
-            
-                    
-            this.log( "Booting up...");
+
+            this.devConsole.log( "Booting up...").endl();
         }
     });
     
@@ -192,12 +198,9 @@ app.factory( 'HostDevice', function( Device )
     return HostDevice;
 })
 
-
-
 app.factory( 'NetInterface', function() 
 {
     'use strict';
-
 
     function NetInterface( host, name ) {
     
@@ -240,7 +243,7 @@ app.factory( 'NetInterface', function()
 
         if( this._linkedTo ) {
             if( this._linkedTo._host ) {
-                return this._linkedTo._host.name;
+                return this._linkedTo._host.key;
             }
         }
         else {
@@ -323,7 +326,6 @@ app.factory( 'NetInterface', function()
                 throw "NetInterface.unStringify(): Invalid link reference.";
             }
         }
-
     }*/
     
     return NetInterface;

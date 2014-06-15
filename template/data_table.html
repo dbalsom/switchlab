@@ -2,10 +2,10 @@
   
   
   <div class="data-table">
+  
+    <div ng-repeat="item in tableItems"  ng-switch="item.type"  > 
 
-    <div ng-repeat="item in tableItems"  ng-switch="item.type" > 
-
-      <div ng-switch-when="InputValue">
+      <div ng-switch-when="InputValue" ng-controller="InputValueController" ng-form="item.name">
         <div class="data-table-row" ng-class-odd="'odd'" ng-class-even= "'even'" >
           <div class="data-table-label">
             {{item.name}}:
@@ -13,21 +13,21 @@
           
             <input  type="text"
                     class="data-table-input"
-                    name="{{item.name}}Input"
                     ng-model="item.value"
+                    name="inputItem"
                     ng-minlength="{{item.minlength}}"
                     ng-maxlength="{{item.maxlength}}"
                     ui-mask="{{item.mask}}"
                     spellcheck="false"
                     required="false"
-                    ui-validate=" 'item.validator(item.value)' "
-                    ui-validate-watch=" 'item.value' " >
+                    ui-validate=" 'item.validator($value)' "
+                    >
             </input>
 
         </div>
       </div>
 
-      <div ng-switch-when="Grid" ng-grid="item.gridOptions" class="data-grid" ng-style="getTableHeight(item)">
+      <div ng-switch-when="Grid" ng-grid="item.gridOptions" class="data-grid" >
       </div>
       
       <div ng-switch-when="OldArray">

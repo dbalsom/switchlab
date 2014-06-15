@@ -32,6 +32,7 @@
 
 .canvas-container {
     cursor: default; /* Avoid text caret when dragging on canvas */
+    float: left;     /* Don't cover up the accordion */
     position: relative; /* Allow child popups inside */
     padding: 0px;
     margin: 0px;
@@ -247,7 +248,10 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
 .data-grid {
   height: 100%;
   overflow: hidden;
-  
+}
+
+.data-grid .ngViewport {
+  height: auto;
 }
 
 .data-grid .ngCellText {
@@ -365,6 +369,7 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
  
 #modal-container {
     position: relative;
+    overflow: hidden; 
 }
 
 .workspace-modal-backdrop,
@@ -415,6 +420,7 @@ h3 .glyphicon {
 /* <div> container for console tabs */
 #tabs {
   margin-top: 10px; /* Put some space between workspace div and tabs */
+  clear: both;
 }
 
 .tab-content-container {

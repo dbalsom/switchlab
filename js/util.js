@@ -47,6 +47,26 @@ var u = (u || {});
 
 u = (function($) {
 
+    function has( obj, key ) {
+        return Object.prototype.hasOwnProperty.call( obj, key );
+    }
+
+    var HTML_CHARS = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        '/': '&#x2F;',
+        '`': '&#x60;'
+    };
+    
+    // Adapted from YUI toolkit
+    function escapeHTML( str ) {
+        return (str + '').replace( /[&<>"'\/`]/g, function( ch ) { 
+            return HTML_CHARS[ch] });
+    }
+    
     // Craig Buckler http://www.sitepoint.com/javascript-generate-lighter-darker-color/
     function ColorLuminance(hex, lum) {
 
@@ -85,6 +105,10 @@ u = (function($) {
         return Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
     }
     
+    function findMidpoint( x1, y1, x2, y2 ) {
+        return { x: (x1 + x2)/2, y: (y1 + y2)/2 }
+    }
+    
     function testInCircle( pt_x, pt_y, cx, cy, r ) {
         var b = ((r*r) > ((cx-pt_x) * (cx-pt_x) + (cy-pt_y) * (cy-pt_y))) ? true:false;
         return b;
@@ -98,11 +122,15 @@ u = (function($) {
     }    
     
     return {
+        has:                has,
+        escapeHTML:         escapeHTML,
         ColorLuminance:     ColorLuminance,
+        
         findAngleFromLine:  findAngleFromLine,
         findPointOnCircle:  findPointOnCircle,
         findPointOnLine:    findPointOnLine,
         findDistance:       findDistance,
+        findMidpoint:       findMidpoint,
         testInCircle:       testInCircle,
         isBetween:          isBetween
     };

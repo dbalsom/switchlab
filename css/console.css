@@ -1,0 +1,12 @@
+
+.console-output {
+    color: DarkBlue;
+}
+
+.console-output .red {
+    color: FireBrick;
+}
+
+.console-output .underline {
+    text-decoration:underline;
+}

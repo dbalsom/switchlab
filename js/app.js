@@ -29,6 +29,7 @@ var app = angular.module('SLApp', [ 'ui.bootstrap',
                                     'ui.validate', 
                                     'ngAnimate',
                                     'ngGrid',
+                                    'ngSanitize',
                                     'workspace_modal']);
 
 app.config( function( $tooltipProvider ) {

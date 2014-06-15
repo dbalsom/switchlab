@@ -1,178 +1,208 @@
 {
 	"sim": {
 		"devices": {
-			"houston": {
+			"65b25c": {
+				"name": "siptiik",
+				"MAC": "FCFFFF000005",
 				"maxInterfaces": 0,
 				"interfaces": [
 					{
 						"name": "fa0/0",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/0.boston"
+						"linkedTo": "fa0/0.8fee60"
 					},
 					{
 						"name": "fa0/1",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/0.orlando"
+						"linkedTo": "fa0/1.8fee60"
 					},
 					{
 						"name": "fa0/2",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/2.boston"
+						"linkedTo": "fa0/2.d09e78"
 					},
 					{
 						"name": "fa0/3",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/2.orlando"
+						"linkedTo": "fa0/3.d09e78"
+					},
+					{
+						"name": "fa0/4",
+						"type": "fa",
+						"hasPhysLink": true,
+						"linkedTo": "fa0/0.47bcd1"
 					}
-				],
-				"name": "houston",
-				"type": "switch",
-				"MAC": "FCFFFF000001"
+				]
 			},
-			"boston": {
+			"d09e78": {
+				"name": "pisfamdaw",
+				"MAC": "FCFFFF000006",
 				"maxInterfaces": 0,
 				"interfaces": [
 					{
 						"name": "fa0/0",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/0.houston"
+						"linkedTo": "fa0/2.b45aa9"
 					},
 					{
 						"name": "fa0/1",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/1.atlanta"
+						"linkedTo": "fa0/3.b45aa9"
 					},
 					{
 						"name": "fa0/2",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/2.houston"
+						"linkedTo": "fa0/2.65b25c"
 					},
 					{
 						"name": "fa0/3",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/3.atlanta"
+						"linkedTo": "fa0/3.65b25c"
 					}
-				],
-				"name": "boston",
-				"type": "switch",
-				"MAC": "FCFFFF000002"
+				]
 			},
-			"orlando": {
+			"b45aa9": {
+				"name": "junbizdi",
+				"MAC": "FCFFFF000007",
 				"maxInterfaces": 0,
 				"interfaces": [
 					{
 						"name": "fa0/0",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/1.houston"
+						"linkedTo": "fa0/2.8fee60"
 					},
 					{
 						"name": "fa0/1",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/0.atlanta"
+						"linkedTo": "fa0/3.8fee60"
 					},
 					{
 						"name": "fa0/2",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/3.houston"
+						"linkedTo": "fa0/0.d09e78"
 					},
 					{
 						"name": "fa0/3",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/2.atlanta"
+						"linkedTo": "fa0/1.d09e78"
+					},
+					{
+						"name": "fa0/4",
+						"type": "fa",
+						"hasPhysLink": true,
+						"linkedTo": "fa0/0.b6b798"
 					}
-				],
-				"name": "orlando",
-				"type": "switch",
-				"MAC": "FCFFFF000003"
+				]
 			},
-			"atlanta": {
+			"8fee60": {
+				"name": "uscila",
+				"MAC": "FCFFFF000008",
 				"maxInterfaces": 0,
 				"interfaces": [
 					{
 						"name": "fa0/0",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/1.orlando"
+						"linkedTo": "fa0/0.65b25c"
 					},
 					{
 						"name": "fa0/1",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/1.boston"
+						"linkedTo": "fa0/1.65b25c"
 					},
 					{
 						"name": "fa0/2",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/3.orlando"
+						"linkedTo": "fa0/0.b45aa9"
 					},
 					{
 						"name": "fa0/3",
 						"type": "fa",
-						"vlan": 1,
 						"hasPhysLink": true,
-						"linkedTo": "fa0/3.boston"
+						"linkedTo": "fa0/1.b45aa9"
 					}
-				],
-				"name": "atlanta",
-				"type": "switch",
-				"MAC": "FCFFFF000004"
+				]
+			},
+			"47bcd1": {
+				"name": "zicuhiwi",
+				"MAC": "FCFFFF000009",
+				"maxInterfaces": 1,
+				"interfaces": [
+					{
+						"name": "fa0/0",
+						"type": "fa",
+						"hasPhysLink": true,
+						"linkedTo": "fa0/4.65b25c"
+					}
+				]
+			},
+			"b6b798": {
+				"name": "fahodre",
+				"MAC": "FCFFFF00000a",
+				"maxInterfaces": 1,
+				"interfaces": [
+					{
+						"name": "fa0/0",
+						"type": "fa",
+						"hasPhysLink": true,
+						"linkedTo": "fa0/4.b45aa9"
+					}
+				]
 			}
 		}
 	},
 	"view": {
 		"nodes": {
-			"houston": {
-				"name": "houston",
+			"65b25c": {
+				"name": "siptiik",
 				"icon": "switch",
-				"x": 420,
-				"y": 168
+				"x": 293,
+				"y": 159
 			},
-			"boston": {
-				"name": "boston",
+			"d09e78": {
+				"name": "pisfamdaw",
 				"icon": "switch",
-				"x": 775,
-				"y": 168
+				"x": 292,
+				"y": 419
 			},
-			"orlando": {
-				"name": "orlando",
+			"b45aa9": {
+				"name": "junbizdi",
 				"icon": "switch",
-				"x": 420,
-				"y": 466
+				"x": 594,
+				"y": 417
 			},
-			"atlanta": {
-				"name": "atlanta",
+			"8fee60": {
+				"name": "uscila",
 				"icon": "switch",
-				"x": 775,
-				"y": 466
+				"x": 593,
+				"y": 159
+			},
+			"47bcd1": {
+				"name": "zicuhiwi",
+				"icon": "host",
+				"x": 110,
+				"y": 155
+			},
+			"b6b798": {
+				"name": "fahodre",
+				"icon": "host",
+				"x": 785,
+				"y": 415
 			}
 		}
 	}
-} 
+}
