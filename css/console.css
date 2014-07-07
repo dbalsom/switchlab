@@ -1,12 +1,31 @@
 
 .console-output {
     color: DarkBlue;
+    margin-bottom: 4px;
 }
 
 .console-output .red {
     color: FireBrick;
 }
+.console-output .gray {
+    color: Gray;
+}
 
 .console-output .underline {
     text-decoration:underline;
 }
+
+.cmd-input > span {
+    display: block;
+    overflow: hidden;
+    padding-right: 5px;
+}
+
+.cmd-input input[type=text] {
+    width: 100%;
+}
+
+.cmd-input input[type=submit] {
+    float: right;
+}
+

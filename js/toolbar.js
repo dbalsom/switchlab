@@ -1,5 +1,5 @@
 
-app.controller('ToolbarController', ['$scope', 'main', '_export', 'ui', 'sim', 'canvas',
+app.controller('uiToolbarController', ['$scope', 'main', '_export', 'ui', 'sim', 'canvas',
     function( $scope, main, _export, ui, sim, canvas ) {
     
     $scope.menu = [{
@@ -23,6 +23,10 @@ app.controller('ToolbarController', ['$scope', 'main', '_export', 'ui', 'sim', '
         }]
         }];
     
+    $scope.sim = { 
+        time: 0
+    }
+    
     $scope.deviceTypes = [
         "switch", "host"
         ];
@@ -39,7 +43,6 @@ app.controller('ToolbarController', ['$scope', 'main', '_export', 'ui', 'sim', '
     $scope.uiSave = function() {
         console.log( _export.toJSON() );
     };
-
     
     $scope.uiReset = function() {
         ui.msgBox( "Reset Workspace?", "Delete all devices and start a new workspace?" )
@@ -48,6 +51,7 @@ app.controller('ToolbarController', ['$scope', 'main', '_export', 'ui', 'sim', '
                 canvas.reset();
             });
     };
+    
 }]);
 
 app.directive('slToolbar', function() {
@@ -56,6 +60,6 @@ app.directive('slToolbar', function() {
     
         restrict: 'EA',
         templateUrl: 'template/toolbar.html',
-        controller: 'ToolbarController'
+        controller: 'uiToolbarController'
     };
 });

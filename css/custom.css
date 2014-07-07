@@ -39,8 +39,7 @@
 }
 
 .sim-canvas {
-
-   display: block;
+   display: block; /* Avoid padding at bottom of canvas element */
 }
     
 html,body {
@@ -52,12 +51,10 @@ h1, h2, h3 {
     font-family: 'Oswald', 'sans-serif';
 }
 
-.alert-compact {
-  margin: 5px;
-  padding: 5px 5px;
 
-}
-
+/*
+ * Input box highlighting on valid / invalid states 
+ */
 input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:focus {
     outline: none;
     border-color: #e9322d;
@@ -99,6 +96,9 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
     border-color: #ee5f5b;
 }
 
+/*
+ *  Notification popups over simulator area
+ */ 
 .sl-notify-container {
     z-index: 100;
     position: absolute;
@@ -111,6 +111,27 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
     
     -webkit-box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); 
+}
+
+/*
+ * Form input fields
+ */
+input.form-control, select.form-control {
+  
+  height: 24px;
+  width: auto;
+} 
+input.form-control {
+
+  padding: 0 0 0 8px;
+}
+
+select.form-control {
+  padding: 0 0 0 3px;
+}
+
+.form-control[readonly] {
+  cursor: auto;
 }
 
 .sl-accordion {
@@ -127,8 +148,6 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
 }
 
 .sl-accordion .panel-heading {
-
-
     background-image: -o-linear-gradient(bottom, #626B70 0%, #464C56 100%);
     background-image: -moz-linear-gradient(bottom, #626B70 0%, #464C56 100%);
     background-image: -webkit-linear-gradient(bottom, #626B70 0%, #464C56  100%);
@@ -145,7 +164,6 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
     font-size: 12px;    
     color: white;
     /*font-weight: 700;*/
-
 }
 
 .sl-accordion .panel {
@@ -165,7 +183,6 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
 .sl-accordion .accordion-toggle {
     display: block;
 }
-
 
 .sl-accordion td {
   /* padding-top: 10px; */
@@ -230,11 +247,17 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
   vertical-align: center;
   font-family: 'Inconsolata', 'sans-serif';
   font-size: 100%;
+  overflow: hidden;
 }
 
 .data-table-array .data-table-content {
   border-left: 2px solid #9DAABF;
   padding-left: 3px;
+}
+
+select.data-table-combo {
+  font-family: 'Inconsolata', 'sans-serif';
+  font-size: 14px;
 }
 
 .data-table-input {
@@ -319,6 +342,9 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
     text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
 }
 
+/*
+ *  Simulation area toolbar
+ */ 
 .toolbar {
     background-image: -webkit-gradient(
         linear,
@@ -340,17 +366,16 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
 
     top: 5px;
     left: 5px;
-    
 }
 
-.toolbarbutton {
+.toolbar-button {
     margin: 1px;
     border-radius: 6px;
     font-size: 12px;
     padding: 4px 10px 4px 10px;
 }
 
-.toolbarspacer {
+.toolbar-spacer {
     
     position: relative;
     display: inline-block;
@@ -362,6 +387,25 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
     width: 2px;
     
 }
+
+.toolbar-timer {
+  color: White;
+  font-family: 'Inconsolata', 'sans-serif';
+  font-size: 16px;
+  text-align: right;
+  vertical-align: middle;
+  padding: 2px 6px 0 0;
+  
+  background-color: rgba(0, 0, 0, .25 );
+  -webkit-box-shadow: inset 1px 3px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 1px 3px 10px rgba(0, 0, 0, 0.4);
+
+  border: 1px inset LightSlateGray;
+  border-radius: 5px;
+  height: 28px;
+  width: 100px;
+}
+
 /*
  *  Workspace Modal Popups  
  *  -----------------------------------------------------------------------------------------------

@@ -30,21 +30,71 @@ var app = angular.module('SLApp', [ 'ui.bootstrap',
                                     'ngAnimate',
                                     'ngGrid',
                                     'ngSanitize',
-                                    'workspace_modal']);
+                                    'workspace_modal'
+                                    ]);
 
 app.config( function( $tooltipProvider ) {
+
     $tooltipProvider.options( { placement: 'bottom',
                                 animation: true,
                                 popupDelay: 600,
                                 appendToBody: true });
+                                
+    //uiMaskConfig.maskDefinitions['H'] = /[0-9a-fA-F]/;
+});
+
+app.filter('stopwatch', function() {
+
+    return function( input ) {
+        //var ms = parseInt(input, 10);
+        
+        function addZ(n) {
+            return (n<10? '0':'') + n;
+        }
+
+        var ms = input % 1000;
+        input = (input - ms) / 1000;
+        var secs = input % 60;
+        input = (input - secs) / 60;
+        var mins = input % 60;
+        var hrs = (input - mins) / 60;
+
+        return addZ(hrs) + ':' + addZ(mins) + ':' + addZ(secs);
+    }
+});
+
+app.filter('truncate', function() {
+    
+    return function(input, limit) {
+        if( input != null && limit != null ) {
+            if( input.length > limit ) { 
+                return input.substring( 0, limit - 1 ) + "...";      
+            }
+            else { 
+                return input;
+            }
+        }
+        return null;
+    }
 });
 
 app.filter('capitalize', function() {
-    return function(input, scope) {
+    return function(input) {
         if (input != null) {
             input = input.toLowerCase();
+            return input.substring(0,1).toUpperCase() + input.substring(1);
         }
-        return input.substring(0,1).toUpperCase() + input.substring(1);
+        return null;
+    }
+});
+
+app.filter('hexadecimal', function() {
+    
+    return function(input) {
+        if( input != null ) { 
+            return input.toString( 16 );        
+        }
+        return null;
     }
 });
 

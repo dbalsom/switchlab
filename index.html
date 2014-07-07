@@ -41,9 +41,7 @@
   <div class="bodyDiv">
   
     <div class="title-header" >SwitchLab</div>
-    <div class="contentDiv" ng-controller="MainUIController">
-
-          
+    <div class="contentDiv" ng-controller="uiMainController">
 
           <div class="uiDiv" id="modal-container">
 
@@ -65,7 +63,6 @@
               
                 <accordion-group 
                   ng-repeat="panel in panels" 
-                  
                   is-open="open" 
                   data-toggle="collapse">
 
@@ -82,14 +79,9 @@
               </accordion>
             </div>
             
-       
-            
             <div class="canvas-container">
-
               <canvas id="C" width="900" height="600" class="sim-canvas" ></canvas>
-              
             </div>
-
 
             <!--
             <div class="popupDiv popover right"  id="switchPopup" style="display: none; position:absolute;">
@@ -138,9 +130,19 @@
 
           <div id="tabs" ng-controller="uiTabController" >
             <tabset>
-              <tab ng-repeat="tab in tabs" heading="{{tab}}" class="slide-left">
+              <tab ng-repeat="device in devices track by device.key" 
+                   heading="{{device.name | truncate: 12}}" 
+                   class="slide-left">
                 <div class="tab-content-container" >
-                  <pre class="pre-scrollable console-output" id="console-{{keys[$index]}}" ></pre>
+                  <pre class="pre-scrollable console-output" id="console-{{device.key}}" ></pre>
+
+                      <form ng-controller="uiCmdController" ng-submit="exec()">  
+                        <div class="cmd-input">
+                          <input type="submit" value="Exec" />
+                          <span><input type="text" ng-model="input"/></span>
+                        </div>
+                      </form>
+                    </div>
                 </div>
               </tab>
             </tabset>
@@ -172,6 +174,8 @@
   <script src="js/ui.js"></script>
   <script src="js/controllers.js"></script>
   <script src="js/console.js"></script>
+  <script src="js/ethernet.js"></script>
+  <script src="js/presenter.js"></script>
   <script src="js/data_table.js"></script>
   <script src="js/modal.js"></script>
   <script src="js/msgbox.js"></script>

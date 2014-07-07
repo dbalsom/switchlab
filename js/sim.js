@@ -23,7 +23,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-
+app.constant( 'STP_CONSTANTS', {
+                priorities: [ 0, 4096, 8192, 12288, 16384, 20480, 24576, 28672, 32768, 
+                              36864, 40960, 45056, 49152, 53248, 57344, 61440 ],
+                default_priority: 32768,
+                multicast_addr: "0180C2000000",
+                SAP: 0x42
+                
+                });
 
 app.factory( 'mac', function()
 {
@@ -76,7 +83,7 @@ app.factory( 'mac', function()
         mac = mac.replace( /[\.:-]/g, '' ).toUpperCase();
               
         // Confirm exactly 12 hex digits
-        return mac.match( /[0-9A-F]{12}/ );
+        return mac.match( /^[0-9A-F]{12}$/ );
     }    
     
     return {
@@ -92,6 +99,12 @@ app.factory( 'mac', function()
 app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterface )
 {
     'use strict';
+    var DELTA_MAX = 500;
+    
+    var stateModel = { 
+        time: 0,
+        state: "paused"
+    }
     
     // Each device is primarily identified by its hash key into the 'devices' object.
     var _devices = Object.create(null);
@@ -217,6 +230,31 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
         return _devices;
     }
     
+    // The meat of the simulation logic is driven here. 
+    // Currently the tick handler is called by the EaselJS tick event
+    function tick( delta ) {
+    
+        // Certain conditions can cause the tick handler be delayed (changing tabs, etc)
+        // Rather than freak out trying to catch up over a long delta period, we will just skip
+        // this tick and pick up on the next one.
+        if( delta > DELTA_MAX ) { 
+            return;
+        }
+    
+        if( stateModel.state == "running" ) {
+            _.forEach( _devices, function( device ) {
+                device.tick( delta );
+            });        
+            
+            stateModel.time += delta;
+        }
+    }    
+    
+    function getStateModel() {
+    
+        return stateModel;
+    }
+    
     function importModel( modelObject ) {
 
         var conf = {};
@@ -239,8 +277,21 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
             conf.name = importDevice.name,
             conf.MAC  = mac.request( importDevice.MAC );
             conf.maxInterfaces = importDevice.maxInterfaces;
+
+            var newDev;
+            switch( importDevice.type ) {
             
-            var newDev = new SwitchDevice( conf );
+                case "switch":
+                    newDev = new SwitchDevice( conf );
+                    break;
+                case "host":
+                    newDev = new HostDevice( conf );
+                    break;
+                default:
+                    throw new Error( "Invalid device type." );
+                    break;
+            }
+
             addDevice( newDev );
             
             _.forEach( importDevice.interfaces, function( importInterface ) {
@@ -295,6 +346,8 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
     return {
  
         // Public Methods
+        tick:                   tick,
+        getStateModel:          getStateModel,
         exportModel:            exportModel,
         importModel:            importModel,
         createDevice:           createDevice,

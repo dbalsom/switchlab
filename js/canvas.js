@@ -81,14 +81,20 @@ app.factory( 'mouse', function() {
     };
 });
 
-app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notify, LinkedList ) {
+app.constant( 'PROTOCOL_COLORS', { "STP": "FFA500",
+                                   "ARP": "DB7093" } );
+
+app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notify, LinkedList,
+                                 PROTOCOL_COLORS ) {
 
     'use strict';
     var CANVAS_ID = "C";
     var NODE_RADIUS = 40;
-    var INTERFACE_RADIUS = 8;
+    var INTERFACE_RADIUS = 7;
     var HIT_DISTANCE = 40;
-
+    var SLOW_TICK_RATE = 1000;
+    var _slowTicker = 0;
+    
     var _canvas; 
     var _DC;    
     var _stage = {};
@@ -100,7 +106,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
     var _packetCntr = {};
     var _linkCursor = {};
     var _bubbleCntr = {};
-
+    var _fpsTxt;
     
     var _nodes = {};
     var _links = {};
@@ -112,6 +118,13 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
     var _selectedNode;
     
     var _dragging = false;
+    var _frameCount = 0;
+    var _fps = 0;
+    
+    function pTween( shape, callback ) {
+        this.shape    = shape;
+        this.callback = callback;
+    }
 
     function hitTestNodes( x, y ) {
         for( var n in _nodes ) {
@@ -123,7 +136,31 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
     }
     
     function handleTick( evt ) {
-
+        
+        // Typically we only update the stage on a tick if something is marked dirty, or if there
+        // are active tweens animating.
+        // But we also update every so often, at the 'slow tick' rate. This allows us to omit
+        // any sort of event or signal from the ui to tell the canvas to update - it will get
+        // around to it eventually.
+        _slowTicker += evt.delta;
+        if( _slowTicker >= SLOW_TICK_RATE ) {
+            _slowTicker -= SLOW_TICK_RATE;
+            
+            _.forEach( _nodes, function( node ) {
+                node.update();
+            });
+            ui.updateClock();
+            _dirty = true;
+            
+            _fps = _frameCount / (SLOW_TICK_RATE / 1000);
+            _fpsTxt.text = _fps;
+            _frameCount = 0;
+            
+            //console.log("tock... " + _slowTicker );
+        }
+        
+        sim.tick( evt.delta );
+    
         if( _dirtyUI ) {
             ui.updateTabs();
             ui.updatePanels();
@@ -136,6 +173,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         }
         
         if( _dirty || _animating ) {
+            _frameCount++;
             _stage.update( evt );
             _dirty = false;
         }  
@@ -227,6 +265,15 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
             }
         }
     }    
+
+    function testDrop( node ) {
+        if( node ) {
+            var device = sim.getDeviceByKey( node.key );
+            if( device ) {
+                dropPacket( _selectedNode );
+            }
+        }    
+    }
     
     function testPackets( node ) {
         if( node ) {
@@ -235,14 +282,11 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                 var neighbors = device.getNeighbors();
             }
             for( var p in neighbors ) {
-            
                 for( var iface in neighbors[p].interfaces ) {
                 
                     //console.log( "Sending packet from interface " + neighbors[p].interfaces[iface].intName );
-                    sendPacket( _selectedNode, neighbors[p].interfaces[iface].intName, _nodes[p] );
+                    sendPacket( _selectedNode, neighbors[p].interfaces[iface].intName );
                 }
-                
-
             }
             device.devConsole.log( "Sending testing packets...").endl();
         }
@@ -268,8 +312,8 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         ui.updatePanels();
         _dirty = true;    
     }
-    
-    function sendPacket( srcNode, srcInt, dstNode ) {
+
+    function sendPacket( srcNode, srcInt, frameType, callback ) {
 
         var srcBubble = _.find( srcNode.bubbleList, 
             function( bubble ) { 
@@ -281,37 +325,28 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         }
                 
         var packetShape = new createjs.Shape();
+        var packetTween = new pTween( packetShape, callback );
         
-        /*
+        var packetColor = PROTOCOL_COLORS[ frameType ];
+        packetColor = packetColor ? packetColor : "White";
+        
         packetShape.graphics.setStrokeStyle(1)
                             .beginStroke("black")
-                            .beginFill("cyan")
-                            .drawCircle( 0, 0, 8 )
-                            .endFill()
-                            .endStroke();*/
-                            
-        packetShape.graphics.setStrokeStyle(1)
-                            .beginStroke("black")
-                            .beginFill("cyan")
+                            .beginFill( packetColor )
                             .moveTo( -13, 0 )
                             .bezierCurveTo( -.3,  8, .3, 8,   13, 0 )
                             .bezierCurveTo( .3,  -8, -.3, -8,  -13, 0 )
                             .endFill()
                             .endStroke();
-                            
-        /*
-        packetShape.x = srcBubble.x;
-        packetShape.y = srcBubble.y;
-        packetShape.rotation = srcBubble.angle * 57.2957795131;
-        */
-        packetShape.x = 0;
-        packetShape.y = 0;
-        
-        //console.log( "Tween from " + srcNode.x + "," + srcNode.y + " to " + dstNode.x + "," + dstNode.y );
 
+        // We overshoot the interface bubbles just a bit so frames aren't sticking 
+        // out when they stop travelling
+        packetShape.x = -6;
+        packetShape.y = 0;
+
+        /*
         var midpoint = u.findMidpoint( srcBubble.x, srcBubble.y, srcBubble.dstX, srcBubble.dstY );
 
-        /*
         createjs.Tween.get( packetShape )
               .to( { x: midpoint.x, y: midpoint.y, scaleX:1.5 }, 500, createjs.Ease.getPowIn(2.5) )
               .to( { x: srcBubble.dstX, y: srcBubble.dstY, scaleX:1}, 500, createjs.Ease.getPowOut(2.5) )
@@ -323,30 +358,82 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                         //deletePacket( packetShape )
                      });
         */
-
         
         srcBubble.linkCntr.addChild( packetShape );
         packetShape.scaleX = 1 / srcBubble.linkCntr.scaleX;
         
         createjs.Tween.get( packetShape )
-                      .to( { x: 100, y: 0 }, 1000, createjs.Ease.getPowInOut(2.5) )
+                      .to( { x: 106, y: 0 }, 1000, createjs.Ease.getPowInOut(2.5) )
                       .call( function() { 
-                       
+                      
+                            if( packetTween.callback ) { 
+                                packetTween.callback();
+                            }
+                            
                             srcBubble.linkCntr.removeChild( packetShape );
-                            _packetList.remove( packetShape );
+                            _packetList.remove( packetTween );
+                            if( _packetList.isEmpty() ) {
+                                //console.log( "Stopping animation.");
+                                _animating = false;
+                            }
+
                       });
         
-        
-        //_packetCntr.addChild( packetShape );
-        _packetList.push( packetShape );
+        _packetList.push( packetTween );
         
         _animating = true;
     }
+
+    function dropPacket( srcNode, srcInt, frameType ) {
+        
+        var packetShape = new createjs.Shape();
+        var packetTween = new pTween( packetShape );
+        
+        var packetColor = PROTOCOL_COLORS[ frameType ];
+        packetColor = packetColor ? packetColor : "White";
+        
+        packetShape.graphics.setStrokeStyle(1)
+                            .beginStroke("black")
+                            .beginFill( packetColor )
+                            .drawCircle(0,0,7)
+                            .endFill()
+                            .endStroke();
+                            
+        packetShape.x = srcNode.x;
+        packetShape.y = srcNode.y;
+    
+        _packetCntr.addChild( packetShape );
+
+        // We create the parabolic tween by combining two separate tweens, one on the Y axis
+        // with a getBackIn ease to simulate gravity, and one on the X axis to deflect the packet's
+        // fall a random displacement. It's not mathematically accurate, but it looks good enough.
+        createjs.Tween.get( packetShape )
+                      .to( { y: srcNode.y + _canvas.height },
+                             1000, 
+                             createjs.Ease.getBackIn(2 + Math.random() * .75) )
+                      .call( function() { 
+                            _packetCntr.removeChild( packetShape );
+                            _packetList.remove( packetTween );
+                            if( _packetList.isEmpty() ) {
+                                _animating = false;
+                            }
+                      });      
+
+        createjs.Tween.get( packetShape ).to( { x: srcNode.x + (Math.random() - .5) * 200,
+                                                alpha: 0 },
+                                                1000,
+                                                createjs.Ease.getPowIn(2) );
+                      
+        _packetList.push( packetTween );
+        _animating = true;                      
+    }
     
     function deletePacket( packetShape ) {
+        // Need to redo this for tweenjs 
+    }
     
-        _packetList.remove( packetShape );   
-        _packetCntr.removeChild( packetShape );
+    function getNodeByKey( key ) {
+        return _nodes[key];
     }
     
     function drawLinksFrom( node, visitedList ) {
@@ -370,8 +457,11 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         srcBubbleShape.graphics.clear();
         node.bubbleList.length = 0;
         
-        var device = sim.getDeviceByHostName( node.name );
-        if( !device ) return;
+        var device = sim.getDeviceByKey( node.key );
+        if( !device ) {
+            // Not necessarily an error, if we want nodes with no associated devices?
+            return false;
+        }
         
         if( !node._neighbors ) {
             node.updateNeighbors();
@@ -429,7 +519,6 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                 }
 
                 // If bubbles collided, push current bubble outwards to avoid collision
-                // FIXME: Push bubble along link vector, not bubble angle vector?
                 if( collision ) {
                     var sinTerm = (1 - (smallestDistance / collideDistance)) * (Math.PI/2);
                     var bubbleBump = ( Math.abs( Math.sin( sinTerm )) * collideDistance );
@@ -441,20 +530,30 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                     srcPt = u.findPointOnLine( srcPt.x, srcPt.y, dstPt.x, dstPt.y, bubbleBump );
                 }
               
-                
-                
                 var srcPtLocal = srcBubbleShape.globalToLocal( srcPt.x, srcPt.y );
                 var dstPtLocal = srcBubbleShape.globalToLocal( dstPt.x, dstPt.y );
-                 
-                if( collision ) {
-                    srcBubbleShape.graphics
-                        .beginStroke("black").setStrokeStyle(1).beginFill("red");   
+
+                var iface = node._neighbors[n].interfaces[i];
+                iface.linkCntr.x = srcPt.x;
+                iface.linkCntr.y = srcPt.y;
+                iface.linkCntr.rotation = angleToNeighbor * 57.2957795131;                
+                
+                var state = device.getInterfaceState( iface.intName );
+                if( state == undefined ) {
+                    console.log( "Couldn't get state for: " + iface.intName );
                 }
-                else {
-                    srcBubbleShape.graphics
-                        .beginStroke("black").setStrokeStyle(1).beginFill("white");
+                var bubbleColor = "white";
+                switch( state ) {
+                    
+                    case "blk": 
+
+                        bubbleColor = "CC0000";
+                        break;
+
                 }
+                
                 srcBubbleShape.graphics
+                    .beginStroke("black").setStrokeStyle(1).beginFill(bubbleColor)
                     .drawCircle( srcPtLocal.x, srcPtLocal.y, INTERFACE_RADIUS )
                     .endFill()
                     .endStroke();
@@ -469,18 +568,21 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                         .endStroke();
                 }
                 
+                var distanceToNode = u.findDistance( node.x, node.y, _nodes[n].x, _nodes[n].y );
                 var distanceToNeighbor = u.findDistance( srcPt.x, srcPt.y, dstPt.x, dstPt.y );
-                var iface = node._neighbors[n].interfaces[i];
+
                 
-                iface.linkCntr.x = srcPt.x;
-                iface.linkCntr.y = srcPt.y;
-                iface.linkCntr.rotation = angleToNeighbor * 57.2957795131;
-                iface.linkCntr.scaleX = distanceToNeighbor / 100;
-                
-                for( var c = 0; c < iface.linkCntr.children.length; c++ ) {
-                
-                    iface.linkCntr.children[c].scaleX = 1 / iface.linkCntr.scaleX;
-                }                
+                if( distanceToNode < NODE_RADIUS * 2 ) {
+                    // Nodes are overlapping. Just scale everything to 0 so we don't get weird
+                    // effects like packets flying out into space behind the node.
+                    iface.linkCntr.scaleX = 0;
+                }
+                else {
+                    iface.linkCntr.scaleX = distanceToNeighbor / 100;
+                    for( var c = 0; c < iface.linkCntr.children.length; c++ ) {
+                        iface.linkCntr.children[c].scaleX = 1 / iface.linkCntr.scaleX;
+                    }                
+                }
                 
                 neighborBubbleList.push({   x: srcPt.x, 
                                             y: srcPt.y, 
@@ -502,7 +604,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
     
     function Node( key, name, icon, x, y ) {
 
-        var n = this; // Pull this node into closure scope for container events (fixme)
+        var n = this; // Pull this node into closure scope for container events (fixme?)
         this.name = name;
         this.icon = icon;
         this.x = x;
@@ -518,13 +620,13 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         this.nodeBmp = new createjs.Bitmap(this.nodeImg);
         this.nodeBmp;
 
-        this.nodeTxtOut = new createjs.Text( name, "12px Arial", "#FFF" );
+        this.nodeTxtOut = new createjs.Text( name, "bold 12px Arial", "#FFF" );
         this.nodeTxtOut.textAlign = "center";
         this.nodeTxtOut.x = this.nodeImg.width / 2;
         this.nodeTxtOut.y = -NODE_RADIUS;
         this.nodeTxtOut.outline = 2;
         
-        this.nodeTxt = new createjs.Text( name, "12px Arial", "#000" ); 
+        this.nodeTxt = new createjs.Text( name, "bold 12px Arial", "#000" ); 
         this.nodeTxt.textAlign = "center";
         this.nodeTxt.x = this.nodeImg.width / 2;
         this.nodeTxt.y = -NODE_RADIUS;
@@ -564,12 +666,12 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                     // we need to do our own hit-testing.
                     var endNode = hitTestNodes( evt.stageX, evt.stageY );
                     
-                    if( endNode && endNode.name && endNode.name != name ) {
+                    if( endNode && endNode.key && endNode.key != key ) {
                         
-                        var dstDev = sim.getDeviceByHostName( endNode.name );
+                        var dstDev = sim.getDeviceByKey( endNode.key );
                         
                         try {
-                            sim.getDeviceByHostName( name ).connectTo( dstDev );
+                            sim.getDeviceByKey( key ).connectTo( dstDev );
                             // Important to update neighbors for both source and destination node
                             n.updateNeighbors();
                             endNode.updateNeighbors();
@@ -645,7 +747,8 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
                     ui.updateTabs();
                 }
                 else { 
-                    testPackets( n );
+                    //testPackets( n );
+                    testDrop( n );
                 }
                 
                 var pt;
@@ -666,6 +769,16 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         });
         
 
+    }
+
+    // Update node state to match model. 
+    // For now this is just the device name
+    Node.prototype.update = function() {
+            
+        if( this._device ) {
+            this.name = this._device.getHostName();
+            this.nodeTxt.text = this._device.getHostName();
+        }
     }
     
     Node.prototype.attach = function( key ) {
@@ -831,6 +944,12 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         
         _packetList = new LinkedList();        
         
+        _fpsTxt = new createjs.Text( 0, "12px Arial", "#000" );
+        _fpsTxt.x = _canvas.width - 20;
+        _fpsTxt.y = 4;
+     
+        _stage.addChild( _fpsTxt );
+        
         createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED;
         createjs.Ticker.setFPS(30);
         createjs.Ticker.addEventListener( "tick", handleTick );
@@ -884,7 +1003,9 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         exportView: exportView,
         addNode:    addNode,
         deleteNode: deleteNode,
+        getNodeByKey: getNodeByKey,
         sendPacket: sendPacket,
+        dropPacket: dropPacket,
         reset:      reset,
         update:     update,
         init:       init

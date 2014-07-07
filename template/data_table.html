@@ -3,30 +3,59 @@
   
   <div class="data-table">
   
-    <div ng-repeat="item in tableItems"  ng-switch="item.type"  > 
+    <div ng-repeat="item in tableItems"  ng-switch="item.type" > 
 
-      <div ng-switch-when="InputValue" ng-controller="InputValueController" ng-form="item.name">
+      <div ng-switch-when="InputValue" ng-controller="InputValueController" >
         <div class="data-table-row" ng-class-odd="'odd'" ng-class-even= "'even'" >
           <div class="data-table-label">
             {{item.name}}:
           </div>
-          
+          <form name="{{item.name}}Form">
             <input  type="text"
-                    class="data-table-input"
+                    class="data-table-input form-control"
                     ng-model="item.value"
-                    name="inputItem"
+                    name="InputItem"
                     ng-minlength="{{item.minlength}}"
                     ng-maxlength="{{item.maxlength}}"
                     ui-mask="{{item.mask}}"
                     spellcheck="false"
                     required="false"
-                    ui-validate=" 'item.validator($value)' "
+                    ng-blur="reset()"
+                    ng-change="change(item.value)"
+                    ui-validate=" 'item.validate($value)' "
                     >
-            </input>
-
+          </form>
         </div>
       </div>
 
+      <div ng-switch-when="OutputValue" ng-controller="OutputValueController" >
+        <div class="data-table-row" ng-class-odd="'odd'" ng-class-even= "'even'" >
+          <div class="data-table-label">
+            {{item.name}}:
+          </div>
+          <form name="{{item.name}}Form">
+            <input type="text"
+                   class="data-table-input form-control"
+                   ng-model="item.value"
+                   readonly>
+
+          </form>
+        </div>
+      </div>
+      
+      <div ng-switch-when="Combo" class="data-combo">
+        <div class="data-table-row" ng-class-odd="'odd'" ng-class-even= "'even'" >
+          <div class="data-table-label">
+            {{item.name}}:
+          </div>      
+          <select ng-model="item.value"
+                  class="data-table-combo form-control"
+                  ng-name="ComboItem"
+                  ng-options="value for value in item.values">
+          </select>
+        </div>
+      </div>
+      
       <div ng-switch-when="Grid" ng-grid="item.gridOptions" class="data-grid" >
       </div>
       

@@ -40,13 +40,12 @@ app.factory( 'notify', function( $timeout )
             console.log( msg.stack );
         }
         else {
-            alert.msg = "An unknown error occured.";
+            alert.msg = "An unknown error occurred.";
         }
         
         alert.type = type ? type : "danger";
         
         notifyScope.add( alert, delay );
-        
     }
     return {
         write: write
@@ -76,6 +75,22 @@ app.controller( 'uiNotifyController', [ '$scope', '$timeout', 'notify',
     }
 ]);
 
+app.controller( 'uiMainController', [ '$scope', '$workspace_modal', 'uiMaskConfig', 'state', 'sim', 'ui',
+    function ($scope, $modal, uiMaskConfig,state, sim, ui ) {
+ 
+    uiMaskConfig.maskDefinitions['H'] = /[0-9a-fA-F]/;
+    
+    $scope.ui_model = ui.getModel();
+    $scope.ui_model.editor_mode = "edit"; 
+
+    $scope.sim_model = sim.getStateModel();
+    
+    $scope.$watch('ui_model.editor_mode', function(mode) {
+        state.set( "editor", mode );
+    });
+    
+
+}]);
 
 app.controller( 'uiAccordionController', [ '$scope', '$timeout', 'uiInfoPanels',
     function ( $scope, $timeout, uiInfoPanels ) {
@@ -83,13 +98,13 @@ app.controller( 'uiAccordionController', [ '$scope', '$timeout', 'uiInfoPanels',
         $(".panel-heading").addClass( "accordion-toggle" );
         
         $scope.panels = [];
-        
         $scope.open = true;
+
         $scope.clearPanels = function() {
             $scope.panels.length = 0;
         };
-        $scope.updatePanels = function() {
 
+        $scope.updatePanels = function() {
             $scope.panels = uiInfoPanels.getPanelList();
         };
     }
@@ -99,40 +114,42 @@ app.controller( 'uiTabController', [ '$scope', '$timeout', 'sim', 'ui',
     function( $scope, $timeout, sim, ui ) {
     
         $scope.devices = [];
-        $scope.tabs = [];
-        $scope.keys = [];
-        $scope.selectedSwitch = {};
-        
+
         $scope.updateTabs = function() {
-            
             $scope.devices = sim.getDeviceInfo();
-            $scope.tabs.length = 0;
-            $scope.keys.length = 0;
-            
-            for( var device in $scope.devices ) {
-                $scope.tabs.push( $scope.devices[device].name );
-                $scope.keys.push( $scope.devices[device].key );
-            }
-            //$scope.selectedSwitch = main.getSelectedSwitch();
         };
         
         $scope.$watch( 'devices', function() {
-        
             $timeout( ui.attachConsoles, 10 );
-            console.log( "Tabs changed, have: " + $scope.tabs.length + " tabs" );
+            //console.log( "Tabs changed, have: " + $scope.tabs.length + " tabs" );
         }); 
+        
     }
 ]);    
+
+app.controller( 'uiCmdController', [ '$scope', '$timeout', 'sim', 
+    function( $scope, $timeout, sim ) {
+    
+        $scope.exec = function( ) {
+            var execDevice = sim.getDeviceByKey( this.device.key );
+            execDevice.exec( this.input );
+        };    
+   
+    }
+]);
+
 
 // Panel Service delivers the data model to the accordion and data table controllers
 app.factory( 'uiInfoPanels', function() {
 
     var _panelList = [];
+    var DEBOUNCE_TIME = 300;
     
     function getPanelList() {
         return _.clone(_panelList);
     }
 
+    
     function getPanel( panelParam ) {
         var panel = null;
         switch( typeof panelParam ) {
@@ -156,14 +173,26 @@ app.factory( 'uiInfoPanels', function() {
     }
 
     function InputValueItem( params ) {
-        this.type  = "InputValue";
-        this.name  = params.name;
-        this.value = params.value;
+        this.type       = "InputValue";
+        this.name       = params.name;
+        this.value      = params.value;
+        this.startValue = params.value; // We hold on to the starting value to use as an exception
+                                        // when checking for uniqueness. 
         this.min   = params.min;
         this.max   = params.max;
         this.mask  = params.mask;
         // If no validator supplied, provide a default one that always validates
-        this.validator = params.validator ? params.validator : function(){ return true; };
+        this.validate = params.validate ? params.validate : function(){ return true; };
+        
+        // We debounce the apply function so that we don't call it on every keystroke. 
+        this.apply    = params.apply ? _.debounce( params.apply, DEBOUNCE_TIME )
+                            : function() { return };
+    }
+    
+    function OutputValueItem( params ) {
+        this.type  = "OutputValue";
+        this.name  = params.name;
+        this.value = params.value;
     }
     
     function ObjectItem( keys, object ) {
@@ -171,34 +200,42 @@ app.factory( 'uiInfoPanels', function() {
         this.keys   = keys;
         this.object = object;
     }
+    
+    function ComboItem( params ) {
+        this.type   = "Combo";
+        this.name   = params.name;
+        this.value  = params.init;
+        this.values = params.values;
+    
+    }
 
     function ArrayItem( headerKey, keys, array ) {
         this.type   = "Array";
         this.headerKey = headerKey;
         this.keys   = keys;
         this.array  = array;
-
     }
     
-    function GridItem( array, columnDefs ) {
-        this.type   = "Grid";
-        this.array  = array;
-        this.gridOptions = {    data: 'item.array',
+    function GridItem( dataSrc, columnDefs ) {
+        this.type    = "Grid";
+        this.dataSrc = dataSrc;
+        this.data    = dataSrc();
+        
+        this.gridOptions = {    data: 'item.data',
                                 columnDefs: columnDefs,
                                 headerRowHeight: 24,
                                 rowHeight: 20,
                                 multiSelect: false,
                                 plugins: [new ngGridFlexibleHeightPlugin()]
-                                
                            };        
     }
     
     function Panel( name, open ) {
-        this.name   = name;
-        this.open   = open;
-        this.index  = -1;
+        this.name  = name;
+        this.open  = open;
+        this.index = -1;
         
-        this.items      = [];
+        this.items = [];
     }
     
     Panel.prototype.addItem = function( item ) {
@@ -216,7 +253,7 @@ app.factory( 'uiInfoPanels', function() {
     
     function reset( panel ) {
         _.forEach( _panelList, function( panel ) {
-            // panel destructor here
+            // TODO: panel destructor here
         });
         _panelList.length = 0;
     }
@@ -224,6 +261,8 @@ app.factory( 'uiInfoPanels', function() {
     return {
 
         InputValueItem: InputValueItem,
+        OutputValueItem: OutputValueItem,
+        ComboItem:      ComboItem,
         GridItem:       GridItem,
         ObjectItem:     ObjectItem,
         ArrayItem:      ArrayItem,
@@ -232,6 +271,7 @@ app.factory( 'uiInfoPanels', function() {
         addPanel:       addPanel,
         delPanel:       delPanel,
         reset:          reset,
+        getPanel:       getPanel,
         getPanelItems:  getPanelItems,
         getPanelList:   getPanelList
     }
@@ -239,12 +279,13 @@ app.factory( 'uiInfoPanels', function() {
     
     
 // UI Service.  Handles various DOM UI interface elements
-app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels )
+app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels, STP_CONSTANTS )
 {
 
     var ui_model = { add_type: "switch" };
     
-
+    var selectedDevice = null;
+    
     function msgBox( title, text, icon, buttons ) {
         
         params = { 
@@ -267,9 +308,13 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels )
         return modalInstance.result;
     }
 
+    function updateSelectedDevice() {
+    
+    }
+    
     function selectDevice( selectionKey ) {
     
-        var selectedDevice = sim.getDeviceByKey( selectionKey );
+        selectedDevice = sim.getDeviceByKey( selectionKey );
         var selectionName = selectedDevice.getHostName();
         
         var newPanel = new uiInfoPanels.Panel( "General", true );
@@ -283,18 +328,19 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels )
                     type: "string",
                     min: 1,
                     max: 63,
-                    validator: 
+                    validate: 
                         function( name ) {
                             var isValid = (name == selectionName) 
                                             || sim.isValidHostName( name )
                                             && sim.isUniqueHostName( name );
-                            if( isValid && ( name != selectionName )) {
-                                //throw new Error( "Stack trace me");
-                                //selectedDevice.setHostName( name );
-                                console.log( "updating in validator... hmm");
-                                updateTabs();
-                            }                                    
                             return isValid;        
+                        },
+                    apply: 
+                        function( name ) {
+                            if( name != selectionName ) {
+                                updateTabs();
+                            }
+                            selectedDevice.setHostName( name );
                         }
                 });
                                                   
@@ -318,12 +364,56 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels )
         var colDefs =   [{ field: 'name', displayName: "Name", width: "20%" },
                          { field: 'vlan', displayName: "vlan", width: "15%" },
                          { field: 'hasPhysLink', displayName: "Link", width: "15%", cellTemplate: "template/link_cell.html" },
-                         { field: '', displayName: '' }
+                         { field: 'STP.state', displayName: 'STP' }
                          
                          ];
-        var newItem = new uiInfoPanels.GridItem( selectedDevice.getInterfaces(), colDefs );
+        var newItem = new uiInfoPanels.GridItem( selectedDevice.getInterfaces, colDefs );
         newPanel.addItem( newItem );        
     
+        if( selectedDevice.type == "switch" ) {
+        
+            /* Set up MAC Address Table panel */
+            newPanel = new uiInfoPanels.Panel( "MAC Address Table", true );
+            uiInfoPanels.addPanel( newPanel );
+            
+            var colDefs = [{ field: 'MAC', displayName: "MAC", width: "45%" },
+                           { field: 'vlan', displayName: "vlan", width: "15%" },
+                           { field: 'ifaceName', displayName: "Int", width: "20%" },
+                           { field: 'age', displayName: "age" }
+                           ];
+                           
+            newItem = new uiInfoPanels.GridItem( selectedDevice.getMACTable, colDefs );
+            newPanel.addItem( newItem );
+
+            /* Set up Spanning Tree Protocol parameters panel */
+            newPanel = new uiInfoPanels.Panel( "Spanning Tree", true );
+            uiInfoPanels.addPanel( newPanel );
+            
+            newItem = new uiInfoPanels.ComboItem( 
+                                { name: "Mode", init: "STP", values: [ "Off", "STP", "RSTP" ] });
+            newPanel.addItem( newItem );
+        
+            newItem = new uiInfoPanels.ComboItem( 
+                                { name: "Priority", init: 32768, values: STP_CONSTANTS.priorities });
+                                
+            newPanel.addItem( newItem );        
+            
+            var BID = selectedDevice.STP.getBridgeID();
+            newItem = new uiInfoPanels.OutputValueItem( { name: "Bridge ID", value: BID } );
+            newPanel.addItem( newItem );
+            
+            var RID = selectedDevice.STP.getRootID();
+            newItem = new uiInfoPanels.OutputValueItem( { name: "Root ID", value: RID } );
+            newPanel.addItem( newItem );
+                
+
+            
+        }
+    
+    }
+    
+    function getSelectedDevice() {
+        return selectedDevice;
     }
     
     function attachConsoles() {
@@ -336,6 +426,10 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels )
         });
     }
     
+    function requestCanvasUpdate() {
+        
+    }
+    
     function updatePanels() {
         var updateScope = angular.element('[ng-controller=uiAccordionController]').scope();
         $timeout( function() { updateScope.updatePanels() }, 0, true );
@@ -344,6 +438,11 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels )
     function updateTabs() {
         var updateScope = angular.element('[ng-controller=uiTabController]').scope();
         $timeout( function() { updateScope.updateTabs() }, 0, true ); 
+    }
+    
+    function updateClock() {
+        var updateScope = angular.element('[ng-controller=uiToolbarController]').scope();
+        updateScope.$apply();
     }
     
     function getModel() {
@@ -362,7 +461,9 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels )
         getModel:       getModel,
         getEditorMode:  getEditorMode,
         getEditorAddType:   getEditorAddType,
-        selectDevice:   selectDevice,
+        selectDevice:       selectDevice,
+        getSelectedDevice:  getSelectedDevice,
+        updateClock:    updateClock,
         updatePanels:   updatePanels,
         updateTabs:     updateTabs,
         attachConsoles: attachConsoles,

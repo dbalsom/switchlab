@@ -2,7 +2,8 @@
 	"sim": {
 		"devices": {
 			"65b25c": {
-				"name": "siptiik",
+				"name": "SW1",
+				"type": "switch",
 				"MAC": "FCFFFF000005",
 				"maxInterfaces": 0,
 				"interfaces": [
@@ -39,7 +40,8 @@
 				]
 			},
 			"d09e78": {
-				"name": "pisfamdaw",
+				"name": "SW4",
+				"type": "switch",
 				"MAC": "FCFFFF000006",
 				"maxInterfaces": 0,
 				"interfaces": [
@@ -70,7 +72,8 @@
 				]
 			},
 			"b45aa9": {
-				"name": "junbizdi",
+				"name": "SW3",
+				"type": "switch",
 				"MAC": "FCFFFF000007",
 				"maxInterfaces": 0,
 				"interfaces": [
@@ -107,7 +110,8 @@
 				]
 			},
 			"8fee60": {
-				"name": "uscila",
+				"name": "SW2",
+				"type": "switch",
 				"MAC": "FCFFFF000008",
 				"maxInterfaces": 0,
 				"interfaces": [
@@ -138,7 +142,8 @@
 				]
 			},
 			"47bcd1": {
-				"name": "zicuhiwi",
+				"name": "HostA",
+				"type": "host",
 				"MAC": "FCFFFF000009",
 				"maxInterfaces": 1,
 				"interfaces": [
@@ -151,7 +156,8 @@
 				]
 			},
 			"b6b798": {
-				"name": "fahodre",
+				"name": "HostB",
+				"type": "host",
 				"MAC": "FCFFFF00000a",
 				"maxInterfaces": 1,
 				"interfaces": [
@@ -168,41 +174,41 @@
 	"view": {
 		"nodes": {
 			"65b25c": {
-				"name": "siptiik",
+                "name": "SW1",
 				"icon": "switch",
-				"x": 293,
-				"y": 159
+				"x": 291,
+				"y": 260
 			},
 			"d09e78": {
-				"name": "pisfamdaw",
+                "name": "SW4",
 				"icon": "switch",
-				"x": 292,
-				"y": 419
+				"x": 467,
+				"y": 432
 			},
 			"b45aa9": {
-				"name": "junbizdi",
+                "name": "SW3",
 				"icon": "switch",
-				"x": 594,
-				"y": 417
+				"x": 628,
+				"y": 260
 			},
 			"8fee60": {
-				"name": "uscila",
+                "name": "SW2",
 				"icon": "switch",
-				"x": 593,
-				"y": 159
+				"x": 465,
+				"y": 101
 			},
 			"47bcd1": {
-				"name": "zicuhiwi",
+                "name": "HostA",
 				"icon": "host",
-				"x": 110,
-				"y": 155
+				"x": 91,
+				"y": 258
 			},
 			"b6b798": {
-				"name": "fahodre",
+                "name": "HostB",
 				"icon": "host",
-				"x": 785,
-				"y": 415
+				"x": 827,
+				"y": 257
 			}
 		}
 	}
-}
+} 
