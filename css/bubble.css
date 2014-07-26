@@ -1,0 +1,76 @@
+/* Thought bubble */
+/* ------------------------------------------------------------------------*/
+.bubble-popup {
+    width: 275px;        
+}
+
+.thought-bubble {
+  position:relative;
+  padding:20px 10px;
+  margin:10px auto 40px;
+  text-align:center;
+  color:#333;
+  border: 1px solid rgba(0, 0, 0, .2);    
+  background:#fff;
+  /* css3 */
+  /*
+  NOTES:
+  -webkit-border-radius:240px 140px; // produces oval in safari 4 and chrome 4
+  -webkit-border-radius:240px / 140px; // produces oval in chrome 4 (again!) but not supported in safari 4
+  Not correct application of the current spec, therefore, using longhand to avoid future problems with webkit corrects this
+  */
+  -webkit-border-top-left-radius:640px 140px;
+  -webkit-border-top-right-radius:640px 140px;
+  -webkit-border-bottom-right-radius:640px 140px;
+  -webkit-border-bottom-left-radius:640px 140px;
+  -moz-border-radius:640px / 140px;
+  border-radius:640px / 140px;
+    
+    -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);    
+}
+
+/* creates the larger circle */
+.thought-bubble.up:before {
+  content:"";
+  position:absolute;
+  z-index:10;
+  bottom:-25px;
+  right:38%;
+  width:30px;
+  height:30px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background:#fff;
+  z-index:-1;    
+  /* css3 */
+  -webkit-border-radius:30px;
+  -moz-border-radius:30px;
+  border-radius:30px;
+    -webkit-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 3px 7px rgba(0, 0, 0, 0.2);        
+  /* reduce the damage in FF3.0 */
+  display:block;
+}
+
+/* creates the smaller circle */
+.thought-bubble.up:after {
+  content:"";
+  position:absolute;
+  z-index:-2;
+  bottom:-35px;
+  right:45%;
+  width:15px;
+  height:15px;
+  border: 1px solid rgba(0, 0, 0, .2); 
+  background:#fff;
+  /* css3 */
+  -webkit-border-radius:15px;
+  -moz-border-radius:15px;
+  border-radius:15px;
+/*    
+    -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);      
+*/
+    /* reduce the damage in FF3.0 */
+  display:block;
+}

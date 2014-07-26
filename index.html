@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/bootstrap.css">
   <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="css/textbox.css">
   <link rel="stylesheet" href="css/console.css">
   <link rel="stylesheet" href="css/animation.css">
   
@@ -23,6 +24,7 @@
   <link href='http://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet' type='text/css'>
   
   <link href='http://cdnjs.cloudflare.com/ajax/libs/ng-grid/2.0.11/ng-grid.min.css' rel='stylesheet' type='text/css'>
+  <link href='http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.1.0/css/font-awesome.min.css' rel='stylesheet' type='text/css'>
   
   <!-- modernizr only runs in head -->
   <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.7.1/modernizr.min.js"></script> 
@@ -31,7 +33,8 @@
 </head>
 <body>
   <!--[if lt IE 8]>
-    <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <p class="browsehappy">You are using an <strong>outdated</strong> browser. 
+    Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
   <![endif]-->
 
   <!-- Add your site or application content here -->
@@ -43,20 +46,11 @@
     <div class="title-header" >SwitchLab</div>
     <div class="contentDiv" ng-controller="uiMainController">
 
-          <div class="uiDiv" id="modal-container">
+          <div class="uiDiv" id="modal-container" >
 
             <sl-toolbar></sl-toolbar>
- 
-            <div class="sl-notify-container">
-              <div ng-controller="uiNotifyController" >
-                <alert  ng-repeat="alert in alerts" 
-                        type="alert.type" 
-                        class="sl-notify notify-animate"
-                        >
-                  {{alert.msg}}
-                </alert>
-              </div>                
-            </div>
+            
+
             
             <div ng-controller="uiAccordionController" class="sl-accordion">
               <accordion close-others="false">
@@ -68,9 +62,9 @@
 
                   <accordion-heading>
                     {{panel.name}}
-                    <i  class="pull-right glyphicon" 
-                        ng-class="{ 'glyphicon-chevron-down': open,
-                                    'glyphicon-chevron-right': !open}"></i>
+                    <i  class="pull-right fa" 
+                        ng-class="{ 'fa-chevron-down': open,
+                                    'fa-chevron-right': !open}"></i>
                   </accordion-heading> 
                   
                   <sl-datatable></sl-datatable>
@@ -80,6 +74,16 @@
             </div>
             
             <div class="canvas-container">
+
+              <!-- Notification popup layer. Notifications appear over canvas. -->
+              <sl-notify></sl-notify>
+            
+              <!-- Infoboxes report device events, etc -->
+              <div class="sl-infobox-container" ng-controller="slInfoBoxList">
+                <sl-infobox ng-repeat="infobox in infoboxes">
+                </sl-infobox>
+              </div>            
+              
               <canvas id="C" width="900" height="600" class="sim-canvas" ></canvas>
             </div>
 
@@ -126,7 +130,7 @@
             -->
 
             
-          </div> <!-- canvasDiv -->
+          </div> <!-- modal container div -->
 
           <div id="tabs" ng-controller="uiTabController" >
             <tabset>
@@ -175,8 +179,11 @@
   <script src="js/controllers.js"></script>
   <script src="js/console.js"></script>
   <script src="js/ethernet.js"></script>
+  <script src="js/STP.js"></script>
   <script src="js/presenter.js"></script>
   <script src="js/data_table.js"></script>
+  <script src="js/textbox.js"></script>
+  <script src="js/notify.js"></script>
   <script src="js/modal.js"></script>
   <script src="js/msgbox.js"></script>
   <script src="js/toolbar.js"></script>
@@ -184,6 +191,8 @@
   <script src="js/canvas.js"></script>
   <script src="js/device.js"></script>
   <script src="js/sim.js"></script>
+  <script src="js/event.js"></script>
+  <script src="js/filters.js"></script>
   <script src="js/util.js"></script>
   <script src="js/list.js"></script>
   

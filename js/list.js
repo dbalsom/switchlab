@@ -5,7 +5,10 @@
     
     Kind of like the human centipede. Look away.
 */
-app.factory( 'LinkedList', function()
+
+var db_list = angular.module('db_list', [] );
+
+db_list.factory( 'LinkedList', function()
 {
     'use strict';
    

@@ -27,10 +27,11 @@
     height: 30px;
 }
 
-
+/*
 .notify-animate.ng-enter, 
 .notify-animate.ng-move,
-.notify-animate.ng-leave
+.notify-animate.ng-leave */
+.notify-animate
 { 
     -webkit-transition: 500ms cubic-bezier(0.250, 0.100, 0.250, 1.000) all;
     -moz-transition: 500ms cubic-bezier(0.250, 0.100, 0.250, 1.000) all;
@@ -40,26 +41,22 @@
     position: relative;
     display:block!important;
 } 
-
  
 .notify-animate.ng-leave.notify-animate.ng-leave-active,
 .notify-animate.ng-enter {
     
     opacity: 0;
+    top: 0;
     left: -400px;
 } 
 
-.notify-animate.ng-move.notify-animate.ng-move-active {
-    top: 0;
-    left: 40px;
-}
- 
 .notify-animate.ng-enter.ng-enter-active, 
 .notify-animate.ng-leave {
+
     opacity: 1;
+    top: 0;
     left: 0;
 }
-
 
 
 /* Scroll down */
@@ -91,4 +88,92 @@
 .scroll-down.ng-leave.ng-leave-active {
     opacity: 0;
     top: 0;
+}
+
+.zoom-in.ng-enter, 
+.zoom-in.ng-leave
+{ 
+    -webkit-transition: 300ms ease-in-out all;
+    -moz-transition: 300ms ease-in-out all;
+    -ms-transition: 300ms ease-in-out all;
+    -o-transition: 300ms ease-in-out all;
+    transition: 300ms ease-in-out all;
+    
+    /* position: relative; */
+    display:block!important;
+} 
+
+.zoom-in.ng-enter {
+  -webkit-transform: scale(.5, .5);
+  opacity: 0;
+} 
+  
+.zoom-in.ng-enter.ng-enter-active {
+  -webkit-transform: scale(1, 1);
+  opacity: 1;
+}  
+
+.zoom-in.ng-leave,  
+.zoom-in.ng-leave.ng-leave-active {
+  -webkit-transform: scale(.5, .5);
+  opacity: 0;
+}
+
+
+.glow
+{ 
+    -webkit-transition: 2000ms ease-in-out all;
+    -moz-transition: 2000ms ease-in-out all;
+    -ms-transition: 2000ms ease-in-out all;
+    -o-transition: 2000ms ease-in-out all;
+    transition: 2000ms ease-in-out all;
+    
+    /* position: relative; */
+    display:block!important;
+} 
+
+.glow.ng-enter {
+  opacity: 1;
+} 
+  
+.glow.ng-enter.ng-enter-active {
+  -webkit-box-shadow: 0px 0px 15px 5px rgba(63, 198, 255, 0.5);
+  -moz-box-shadow: 0px 0px 15px 5px rgba(63, 198, 255, 0.5);
+  box-shadow: 0px 0px 15px 5px rgba(63, 198, 255, 0.5);
+  opacity: 1;
+}  
+
+.glow.ng-leave,  
+.glow.ng-leave.ng-leave-active {
+  opacity: .25;
+}
+
+/*************************************************/
+.template.ng-enter, 
+.template.ng-leave
+{ 
+    -webkit-transition: 300ms ease-in-out all;
+    -moz-transition: 300ms ease-in-out all;
+    -ms-transition: 300ms ease-in-out all;
+    -o-transition: 300ms ease-in-out all;
+    transition: 300ms ease-in-out all;
+    
+    /* position: relative; */
+    display:block!important;
+} 
+
+.template.ng-enter {
+  -webkit-transform: scale(.5, .5);
+  opacity: 0;
+} 
+  
+.template.ng-enter.ng-enter-active {
+  -webkit-transform: scale(1, 1);
+  opacity: 1;
+}  
+
+.template.ng-leave,  
+.template.ng-leave.ng-leave-active {
+  -webkit-transform: scale(.5, .5);
+  opacity: 0;
 }

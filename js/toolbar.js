@@ -1,6 +1,6 @@
 
-app.controller('uiToolbarController', ['$scope', 'main', '_export', 'ui', 'sim', 'canvas',
-    function( $scope, main, _export, ui, sim, canvas ) {
+app.controller('uiToolbarController', ['$scope', '$interval', 'main', '_export', 'ui', 'state', 'sim', 'simClock', 'canvas',
+    function( $scope, $interval, main, _export, ui, state, sim, simClock, canvas ) {
     
     $scope.menu = [{
         name: "file",
@@ -8,7 +8,7 @@ app.controller('uiToolbarController', ['$scope', 'main', '_export', 'ui', 'sim',
         icon: "file",
         items: [{
             name: "Open",
-            icon: "open",
+            icon: "folder-open-o",
             func: $scope.uiOpen
         }, {
             name: "Save",
@@ -17,22 +17,38 @@ app.controller('uiToolbarController', ['$scope', 'main', '_export', 'ui', 'sim',
         }, {
             name: "separator"
         }, {
-            name: "Reset",
-            icon: "trash",
+            name: "Reset Workspace",
+            icon: "trash-o",
             func: $scope.uiReset
         }]
         }];
-    
-    $scope.sim = { 
-        time: 0
-    }
-    
+
     $scope.deviceTypes = [
         "switch", "host"
         ];
     
     $scope.deviceType = { type: "switch" };
+
+    $scope.ui_model = ui.getModel();
+    $scope.ui_model.editor_mode = "edit"; 
+
+    $scope.sim = { 
+        time: simClock.getTime(),
+        state: state.get( "sim" ),
+        running: false
+    };
+   
+    $scope.$watch('ui_model.editor_mode', function(mode) {
+        state.set( "editor", mode );
+    });
     
+    $scope.$watch('sim.state', function( newState ) {
+        if( newState == 'running' ) {
+            running = true;
+        }
+        state.set( "sim", newState );
+    });
+
     $scope.setDeviceType = function(dev) {
         $scope.deviceType.type = dev;
     };
@@ -51,6 +67,16 @@ app.controller('uiToolbarController', ['$scope', 'main', '_export', 'ui', 'sim',
                 canvas.reset();
             });
     };
+
+    // Update the simulation clock once a second
+    $scope.clockInterval = $interval( function() {
+        $scope.sim.time = simClock.getTime();   
+    }, 1000 );    
+    
+    $scope.$on('$destroy', function() {
+        console.log( "Destroying interval timer." );
+        $interval.cancel( $scope.clockInterval );
+    });
     
 }]);
 

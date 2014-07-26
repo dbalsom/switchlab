@@ -113,6 +113,7 @@ input.ng-invalid, textarea.ng-invalid, select.ng-invalid {
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); 
 }
 
+
 /*
  * Form input fields
  */
@@ -368,15 +369,20 @@ select.data-table-combo {
     left: 5px;
 }
 
+.toolbar-button .fa {
+   vertical-align: middle;
+   font-size: 16px;
+   color: #444444;
+}
+
 .toolbar-button {
     margin: 1px;
     border-radius: 6px;
     font-size: 12px;
-    padding: 4px 10px 4px 10px;
+    padding: 4px 8px 4px 8px;
 }
 
 .toolbar-spacer {
-    
     position: relative;
     display: inline-block;
     vertical-align: middle;
@@ -385,7 +391,6 @@ select.data-table-combo {
     margin-left: 5px;
     margin-right: 5px;
     width: 2px;
-    
 }
 
 .toolbar-timer {

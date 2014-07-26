@@ -1,0 +1,17 @@
+
+<div class="sl-notify-container" ng-controller="uiNotifyController">
+  <alert ng-repeat="alert in alerts"  
+         type="alert.type" 
+         ng-switch="alert.type"
+         class="sl-notify notify-animate">
+    
+    <span ng-switch-when="danger" class="fa fa-times-circle"></span>
+    <span ng-switch-when="warning" class="fa fa-warning"></span>
+    <span ng-switch-when="info" class="fa fa-exclamation-circle"></span>
+    <span ng-switch-when="success" class="fa fa-check-circle"></span>
+
+    {{alert.msg}}
+    
+  </alert>
+</div>
+

@@ -23,72 +23,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-app.factory( 'notify', function( $timeout )
-{
-    function write( msg, type, delay ) {
-        var notifyScope = angular.element('[ng-controller=uiNotifyController]').scope();
-        
-        var alert = {};
-        
-        if( typeof msg === "string" ) {
-            alert.msg = msg;
-        }
-        else if( msg && typeof msg === "object" ) {
-            alert.msg = msg.message;
-            
-            console.log( msg.message );
-            console.log( msg.stack );
-        }
-        else {
-            alert.msg = "An unknown error occurred.";
-        }
-        
-        alert.type = type ? type : "danger";
-        
-        notifyScope.add( alert, delay );
-    }
+app.directive( 'ico', function() {
     return {
-        write: write
-    }
+        restrict: 'EA',
+        scope: { type: '@i' },
+        template: '<span class="fa fa-fw" ng-class="\'fa-{{type}}\'"></span>'
+    };
 });
 
-app.controller( 'uiNotifyController', [ '$scope', '$timeout', 'notify',
-    function ( $scope, $timeout, notify ) {
-    
-        $scope.alerts = [];
-
-        $scope.add = function( alert, delay ) {
-        
-            if( typeof delay === "undefined" ) {
-                delay = 3000;
-            }
-            $scope.alerts.push( alert );
-            $timeout( 
-                function() { 
-                    var index = $scope.alerts.indexOf( alert );
-                    if( index > -1 ) {
-                        $scope.alerts.splice(index, 1)
-                    }
-                }, 
-                delay, true);
-        }
-    }
-]);
-
-app.controller( 'uiMainController', [ '$scope', '$workspace_modal', 'uiMaskConfig', 'state', 'sim', 'ui',
-    function ($scope, $modal, uiMaskConfig,state, sim, ui ) {
+app.controller( 'uiMainController', [ '$scope', '$workspace_modal',
+                                      'uiMaskConfig',
+                                      'state', 'sim', 'simClock', 'ui',
+    function ($scope, $modal, uiMaskConfig, state, sim, simClock, ui ) {
  
     uiMaskConfig.maskDefinitions['H'] = /[0-9a-fA-F]/;
-    
-    $scope.ui_model = ui.getModel();
-    $scope.ui_model.editor_mode = "edit"; 
-
-    $scope.sim_model = sim.getStateModel();
-    
-    $scope.$watch('ui_model.editor_mode', function(mode) {
-        state.set( "editor", mode );
-    });
-    
 
 }]);
 
@@ -445,6 +393,11 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels, STP_
         updateScope.$apply();
     }
     
+    function addInfoBox( box ) {
+        var updateScope = angular.element('[ng-controller=slInfoBoxList]').scope();
+        $timeout( function() { updateScope.addBox( box ) }, 0, true );
+    }
+    
     function getModel() {
         return ui_model;
     }
@@ -466,6 +419,7 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels, STP_
         updateClock:    updateClock,
         updatePanels:   updatePanels,
         updateTabs:     updateTabs,
+        addInfoBox:     addInfoBox,
         attachConsoles: attachConsoles,
         msgBox:         msgBox
     }

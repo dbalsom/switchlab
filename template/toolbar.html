@@ -4,7 +4,8 @@
   <div class="btn-group">
     
     <button type="button" class="btn btn3d toolbar-button dropdown-toggle">
-        <span class="glyphicon glyphicon-file"></span>
+        <ico i="file"></ico>
+        <span class="caret"></span>
     </button>
     
     <ul class="dropdown-menu">
@@ -12,7 +13,7 @@
       <li ng-repeat="item in menu[0].items" ng-class="{divider : item.name == 'separator'}">
         
         <a ng-if="item.name != 'separator'" role="menuitem" ng-click="item.func()">
-          <span class="glyphicon" ng-class="'glyphicon-{{item.icon}}'" ></span>
+          <ico i="{{item.icon}}"></ico>
           <span> {{item.name}}</span>
         </a>
       </li>
@@ -28,10 +29,14 @@
               class="btn btn3d toolbar-button" 
               ng-model="ui_model.editor_mode" 
               btn-radio="'add'"
-              tooltip="Add a Device">Add {{ui_model.add_type | capitalize}}</button>
+              tooltip="Add a Device">
+
+
+      <ico i="plus-square"></ico>{{ui_model.add_type | capitalize}}</button>
       <button type="button" class="btn btn3d toolbar-button dropdown-toggle">
         <span class="caret"></span>
-        <span class="sr-only">Split button!</span>
+        <!--
+        <span class="sr-only">Split button!</span>-->
       </button>
       
       <ul class="dropdown-menu" role="menu">
@@ -44,18 +49,16 @@
     </div>
 
     <button type="button" class="btn btn3d toolbar-button" 
-            ng-model="ui_model.editor_mode" btn-radio="'edit'">Edit</button>
+            ng-model="ui_model.editor_mode" btn-radio="'edit'" tooltip="Edit">
+      <ico i="edit"></ico>
+    </button>
     <button type="button" class="btn btn3d toolbar-button" 
-            ng-model="ui_model.editor_mode" btn-radio="'del'">Del</button>
+            ng-model="ui_model.editor_mode" btn-radio="'del'" tooltip="Delete">
+      <ico i="minus-square"></ico>
+    </button>
     <button type="button" class="btn btn3d toolbar-button" 
-            ng-model="ui_model.editor_mode" btn-radio="'link'">Link</button>
-  </div>
-  
-  <div class="toolbar-spacer"></div>
-  
-  <div class="btn-group">
-    <button type="button" class="btn btn3d toolbar-button" ng-click="uiReset()">
-      <span class="glyphicon glyphicon-trash"></span>
+            ng-model="ui_model.editor_mode" btn-radio="'link'" tooltip="Link Devices">
+      <ico i="link"></ico>           
     </button>
   </div>
   
@@ -63,21 +66,26 @@
 
   <div class="btn-group">
     <button type="button" class="btn btn3d toolbar-button"
-            ng-model="sim_model.state" btn-radio="'running'" tooltip="Run sim">
-      <span class="glyphicon glyphicon-play"></span>
+            ng-model="sim.state" btn-radio="'running'" tooltip="Run sim">
+      <ico i="play"></ico>
     </button>
-        <button type="button" class="btn btn3d toolbar-button"
-            ng-model="sim_model.state" btn-radio="'paused'" tooltip="Pause sim">
-      <span class="glyphicon glyphicon-pause"></span>
+    <button type="button" class="btn btn3d toolbar-button"
+            ng-model="sim.state" btn-radio="'paused'" tooltip="Pause sim">
+      <ico i="pause"></ico>
     </button>
-    
+    <button type="button" class="btn btn3d toolbar-button"
+            ng-model="sim.state" btn-radio="'stopped'" tooltip="Stop sim">
+      <ico i="stop"></ico>
+    </button>    
   </div>
   
   <div class="toolbar-spacer"></div>
   
   <div class="btn-group">
     <div class="toolbar-timer">
-      <span>{{ sim_model.time | stopwatch }}</span>
+      <ico i="clock-o"
+           ng-if="sim.state=='running'">
+      </ico><span tooltip="Simulation Time">{{ sim.time | stopwatch }}</span>
     </div>
   </div>
 </div>

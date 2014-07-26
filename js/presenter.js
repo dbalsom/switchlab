@@ -30,6 +30,19 @@ app.factory( 'presenter', [ '$injector', function( $injector )
         _canvas.dropPacket( srcNode, srcInterface, frameType );
     }
     
+    function deviceThink( device, msg ) {
+        if( !_ui ) {
+            _ui = $injector.get('ui');
+        }
+        if( !_canvas ) {
+            _canvas = $injector.get('canvas');
+        }
+        
+        node = _canvas.getNodeByKey( device.key );
+        
+        _ui.addInfoBox( { x: node.x, y: node.y, type: "arrow", pos: 'below', dist: 40, html: msg });
+    }
+    
     function notifyDeviceUpdate( device, type ) {
         if( !_ui ) {
             _ui = $injector.get('ui');
@@ -45,6 +58,7 @@ app.factory( 'presenter', [ '$injector', function( $injector )
     return { 
         requestDropPresentation: requestDropPresentation,
         requestFramePresentation: requestFramePresentation,
+        deviceThink:        deviceThink,
         notifyDeviceUpdate: notifyDeviceUpdate
     }
 

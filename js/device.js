@@ -1,3 +1,36 @@
+/*
+SwitchLab
+Copyright (c) 2014 Daniel Balsom
+
+The MIT License (MIT)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+
+app.factory( 'DeviceDefs', function() 
+{
+    return {
+        
+        STP_ROOTBRIDGE: 0x01    
+    }
+});
+
 
 app.factory( 'Device', function( mac, NetInterface, DeviceConsole ) 
 {
@@ -44,12 +77,16 @@ app.factory( 'Device', function( mac, NetInterface, DeviceConsole )
         this.getHostName = function() {
             return this.name;
         }; 
+        
+        this.getStatus = function() {
+            return 0;
+        };
 
         this.toJSON = function() {
             return { 
                 name: this.name,
                 type: this.type,
-                MAC:    this.MAC,
+                MAC:  this.MAC,
                 maxInterfaces:    this.maxInterfaces,
                 interfaces: this.interfaces
             }
@@ -206,152 +243,9 @@ app.factory( 'Device', function( mac, NetInterface, DeviceConsole )
     
 });
         
-app.factory( 'STP', function( STP_CONSTANTS, ethernet ) {
 
-    var STP = Class.extend( function() {
-    
-        this.bridgeID = 0;
-        this.deviceMACint = 0;
-        this.priority = 32768;
-        this.sysID = 1;
-        this.device;
         
-        this.maxAge = 20000;
-        this.maxAgeTimer = 0;
-        this.helloTime  = 2000;
-        this.helloTimer = 0;
-        
-        function init( iface ) {
-            if( !iface.STP ) { 
-                iface.STP = { 
-                    hello: 0,
-                    state: "blk"
-                    };
-            }        
-        }
-        
-        this.constructor = function( device, priority ) {
-        
-            this.setPriority( priority );
-            this.device = device;
-            if( !device ) { 
-                throw new Error( "STP: Invalid device." );
-            }
-            
-            this.calcBridgeID();
-            this.rootID = this.bridgeID; // We always initially believe we are the root bridge
-        }
-             
-        this.setPriority = function( priority ) {
-             if( STP_CONSTANTS.priorities.indexOf( priority ) > -1 ) { 
-                this.priority = priority;
-            }
-        }
-        
-        this.calcBridgeID = function() {
-        
-            /* The bridge ID is composed of the priority value ( 4 bits ), system ID ( 12 bits ) 
-               and device MAC ( 48 bits ) */
-            this.bridgeID = (( this.priority << 12 ) + this.sysID ).toString( 16 ) 
-                            + this.device.getMAC();
-        }
-        
-        this.getBridgeID = function() {
-            return this.bridgeID;
-        }
-        this.getRootID = function() {
-            return this.rootID;
-        }
-        
-        this.getInterfaceState = function( iface, vlan ) {
-            init( iface );
-            return iface.STP.state;
-        }
-        
-        this.isLearning = function( iface ) {
-
-            init( iface );
-            if( iface.STP.state == "lrn" || iface.STP.state == "fwd" ) {
-                return true;
-            }
-            return false;
-        }
-        
-        this.isForwarding = function( iface ) {
-            init( iface );
-            if( iface.STP.state == "fwd" ) {
-                return true;
-            }
-            return false;
-        }
-        
-        this.isBPDU = function( frame ) {
-        
-            if( frame.dst == STP_CONSTANTS.multicast_addr ) {
-                // Destination is STP multicast address
-                if( frame.type_len <= 1500 ) {
-                    // EtherType field is actually length, signifying a 802.3 frame
-                    if( frame.LLC.DSAP == 0x42 && frame.LLC.SSAP == 0x42 ) {
-                        // LLC header specifies this is spanning tree protocol
-                        return true;
-                    }
-                }            
-            }
-            return false;
-        }
-        
-        this.processBPDU = function( bpdu ) {
-        
-        }
-        
-        this.sendHello = function() {
-            var hello = new ethernet.Frame( { src: this.device.getMAC(),
-                                              dst: STP_CONSTANTS.multicast_addr,
-                                              type_len: 1500,
-                                              LLC: {
-                                                SSAP: STP_CONSTANTS.SAP,
-                                                DSAP: STP_CONSTANTS.SAP,
-                                                control: 0
-                                                },
-                                              payload: {
-                                                // BPDU goes here
-                                                }
-                                            });
-                                            
-            this.device.floodFrame( hello );
-        }
-        
-        this.tick = function( delta ) {
-        
-            this.helloTimer += delta;
-            if( this.helloTimer >= this.helloTime ) {
-                
-                this.sendHello();
-                this.helloTimer -= this.helloTime;
-            }
-        
-            var ifaces = this.device.getInterfaces();
-            for( var ifaceKey in ifaces ) {
-            
-                var iface = ifaces[ifaceKey];
-                /* this is all wrong, we don't send out a flood per interface!!
-                init( iface );
-                iface.STP.hello += delta;
-                if( iface.STP.hello >= this.helloTime ) {
-                    // Send a Hello BPDU
-                    
-                    this.sendHello();
-                    iface.STP.hello -= this.helloTime;
-                }
-                */
-            }
-        }
-    });
-    
-    return STP;
-})        
-        
-app.factory( 'SwitchDevice', function( Device, STP, presenter ) 
+app.factory( 'SwitchDevice', function( Device, DeviceDefs, STP, presenter ) 
 {
 
     var SwitchDevice = Device.extend( function() {
@@ -366,7 +260,7 @@ app.factory( 'SwitchDevice', function( Device, STP, presenter )
             switch( conf.STPmode ) {
                 
                 default: 
-                    this.STP = new STP( this );
+                    this.STP = new STP.STPInstance( this );
                 break;
             }
             this.devConsole.log( "Booting up...").endl();
@@ -382,6 +276,10 @@ app.factory( 'SwitchDevice', function( Device, STP, presenter )
             }
             return MACTableArray;
         }
+        
+        this.getStatus = function() {
+            return this.STP.isRoot();
+        };
         
         this.tick = function( delta ) {
         

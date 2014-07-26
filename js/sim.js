@@ -23,14 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-app.constant( 'STP_CONSTANTS', {
-                priorities: [ 0, 4096, 8192, 12288, 16384, 20480, 24576, 28672, 32768, 
-                              36864, 40960, 45056, 49152, 53248, 57344, 61440 ],
-                default_priority: 32768,
-                multicast_addr: "0180C2000000",
-                SAP: 0x42
-                
-                });
 
 app.factory( 'mac', function()
 {
@@ -96,16 +88,22 @@ app.factory( 'mac', function()
     }
 });
 
-app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterface )
+app.factory( 'simClock', function()
+{
+    var _time  = 0;
+    return {
+        getTime: function() { return _time; },
+        setTime: function(time) { _time = time },
+        tick: function(delta) { _time += delta }
+    }
+});
+
+app.factory( 'sim', function( simClock, events, state, mac, Device, SwitchDevice, HostDevice, 
+                              NetInterface )
 {
     'use strict';
     var DELTA_MAX = 500;
-    
-    var stateModel = { 
-        time: 0,
-        state: "paused"
-    }
-    
+
     // Each device is primarily identified by its hash key into the 'devices' object.
     var _devices = Object.create(null);
     
@@ -155,18 +153,28 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
         return _devices[key];
     }
     
+    function getDeviceByMAC( MACaddress ) {
+        return _.find( _devices, { 'MAC': MACaddress } );
+    }
     function createDevice( type ) {
         
         var newDevice;
         switch( type ) {
             
             case 'switch':
-            
-                newDevice = new SwitchDevice( { key: createKey(), name: getUniqueHostName(), MAC: mac.getUnique() } );
+                newDevice = new SwitchDevice( 
+                                    { key: createKey(), 
+                                      name: getUniqueHostName(), 
+                                      MAC: mac.getUnique() } );
                 break;
             case 'host':
-            
-                newDevice = new HostDevice( { key: createKey(), name: getUniqueHostName(), MAC: mac.getUnique() } );
+                newDevice = new HostDevice( 
+                                    { key: createKey(), 
+                                      name: getUniqueHostName(), 
+                                      MAC: mac.getUnique() } );
+                break;
+            default:
+                throw new Error( "createDevice: Invalid device type specified: " + type );
                 break;
         }
     
@@ -241,20 +249,18 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
             return;
         }
     
-        if( stateModel.state == "running" ) {
+        // events queued with post() are now sent out
+        events.dispatch();
+    
+        if( state.get('sim') == "running" ) {
+            simClock.tick( delta );
+
             _.forEach( _devices, function( device ) {
                 device.tick( delta );
             });        
-            
-            stateModel.time += delta;
         }
     }    
-    
-    function getStateModel() {
-    
-        return stateModel;
-    }
-    
+
     function importModel( modelObject ) {
 
         var conf = {};
@@ -347,7 +353,6 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
  
         // Public Methods
         tick:                   tick,
-        getStateModel:          getStateModel,
         exportModel:            exportModel,
         importModel:            importModel,
         createDevice:           createDevice,
@@ -357,6 +362,7 @@ app.factory( 'sim', function( mac, Device, SwitchDevice, HostDevice, NetInterfac
         getDeviceInfo:          getDeviceInfo,
         getDeviceNames:         getDeviceNames,
         getDeviceByHostName:    getDeviceByHostName,
+        getDeviceByMAC:         getDeviceByMAC,
         getDeviceByKey:         getDeviceByKey,
         isValidHostName:        isValidHostName,
         isUniqueHostName:       isUniqueHostName,

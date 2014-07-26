@@ -84,8 +84,53 @@ app.factory( 'mouse', function() {
 app.constant( 'PROTOCOL_COLORS', { "STP": "FFA500",
                                    "ARP": "DB7093" } );
 
-app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notify, LinkedList,
-                                 PROTOCOL_COLORS ) {
+
+app.factory( 'canvasEvents', function( canvas, sim, events, ui ) {
+
+    function register() {
+        events.on( 'STP', handleSTP );
+    }
+    
+    function handleSTP( type, params ) {
+    
+        switch( type ) {
+            
+            case "BECAME_ROOT":
+                var node = canvas.getNodeByKey( params.key );
+                ui.addInfoBox( { x: node.x, y: node.y,
+                     type: "arrow", 
+                     pos: 'below', 
+                     dist: 40, 
+                     html: "I am the root!" });
+            break;
+            
+            case "ROOT_CHANGED":
+                var node = canvas.getNodeByKey( params.key );
+                var rootDev  = sim.getDeviceByMAC( params.MAC );
+                var str;
+                if( rootDev ) {
+                    str = "<span class='hostname'>" + rootDev.name + "</span> is now the root!";
+                }
+                else {
+                    str = "Invalid root ID received!";
+                }
+                ui.addInfoBox( { x: node.x, y: node.y,
+                                 type: "arrow", 
+                                 pos: 'below', 
+                                 dist: 40, 
+                                 html: str });
+            break;
+        
+        }
+    }
+
+    return { 
+        register: register
+    }
+});
+
+app.factory( 'canvas', function( state, img, sim, DeviceDefs, mouse, ui, 
+                                 uiInfoPanels, notify, LinkedList, PROTOCOL_COLORS ) {
 
     'use strict';
     var CANVAS_ID = "C";
@@ -135,6 +180,30 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         return null;
     }
     
+    function createOutlinedText( text, style, fillColor, outlineColor, outlineWidth, align ) {
+    
+        var textContainer = new createjs.Container();
+        var textShape;
+        var outlineShape;
+        
+        textShape = new createjs.Text( text, style, fillColor ); 
+        textShape.textAlign =  align ? align : "left";
+        
+        outlineShape = new createjs.Text( text, style, outlineColor );
+        outlineShape.textAlign = align ? align : "left";
+        outlineShape.outline = outlineWidth * 2;
+
+        textContainer.addChild( outlineShape );        
+        textContainer.addChild( textShape );       
+
+        textContainer.setText = function(newText) {
+            this.getChildAt( 0 ).text = newText;
+            this.getChildAt( 1 ).text = newText;
+        }
+        
+        return textContainer;
+    }
+    
     function handleTick( evt ) {
         
         // Typically we only update the stage on a tick if something is marked dirty, or if there
@@ -155,8 +224,6 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
             _fps = _frameCount / (SLOW_TICK_RATE / 1000);
             _fpsTxt.text = _fps;
             _frameCount = 0;
-            
-            //console.log("tock... " + _slowTicker );
         }
         
         sim.tick( evt.delta );
@@ -207,7 +274,6 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
             update();
         }
         else {
-        
             notify.write( "Device creation failed: " + type );
         }
     }; 
@@ -643,14 +709,23 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         this.nodeBand.graphics.drawCircle(  this.nodeImg.width/2, 
                                             this.nodeImg.height/2, 
                                             NODE_RADIUS - 3).endFill().endStroke();       
-                                            
+
+        // "\uF024"  flag
+        // "\uF0E8"  tree?
+        this.nodeStatus = createOutlinedText( "", "20px FontAwesome", "FFFF94", "Black", 1.5, "center" );
+        this.nodeStatus.x = this.nodeImg.width/4;
+        this.nodeStatus.y = this.nodeImg.height - this.nodeImg.height / 2;
+        this.nodeStatus.shadow = new createjs.Shadow("rgba(0,0,0,.5)", 3, 3, 8);
+        
+        
+
         this.nodeBubbles = new createjs.Shape();
         this.bubbleList = [];
         
         this.nodeCntr = new createjs.Container();  
         this.nodeCntr.name = name;
         this.nodeCntr.addChild( this.nodeCirc, this.nodeBand, this.nodeBubbles, this.nodeBmp,
-                                this.nodeTxtOut, this.nodeTxt );
+                                this.nodeTxtOut, this.nodeTxt, this.nodeStatus );
         
         this.nodeCntr.x = this.x - this.nodeImg.width / 2 + 0.5;
         this.nodeCntr.y = this.y - this.nodeImg.height / 2 + 0.5;        
@@ -771,13 +846,19 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
 
     }
 
-    // Update node state to match model. 
-    // For now this is just the device name
+    // Update node state to match device model. 
     Node.prototype.update = function() {
             
         if( this._device ) {
             this.name = this._device.getHostName();
             this.nodeTxt.text = this._device.getHostName();
+            
+            var status = this._device.getStatus();
+            var statusStr = "";
+            if( status & DeviceDefs.STP_ROOTBRIDGE ) {
+                statusStr += "\uF0E8";
+            }
+            this.nodeStatus.setText(statusStr);
         }
     }
     
@@ -838,8 +919,6 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
     Node.prototype.setBandColor = function( strokeColor, fillColor ) {
         
         this.nodeBand.graphics.clear();
- 
-
         this.nodeBand.graphics.beginStroke(strokeColor).setStrokeStyle(4).beginFill(fillColor);
         this.nodeBand.graphics.drawCircle(  this.nodeImg.width/2, 
                                             this.nodeImg.height/2, 
@@ -914,7 +993,7 @@ app.factory( 'canvas', function( state, img, sim, mouse, ui, uiInfoPanels, notif
         // Why you'd want to let canvas clicks select text in the first place, I have no idea.
         // But yeah, prevent that.
         _canvas.onselectstart = function () { return false; }
-
+        
         _stage = new createjs.Stage( _canvas );
         _stage.enableMouseOver();
 

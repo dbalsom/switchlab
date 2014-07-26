@@ -26,12 +26,13 @@ THE SOFTWARE.
 
 
 
-app.factory( 'DeviceConsole', function( $sanitize )
+app.factory( 'DeviceConsole', function( $sanitize, $filter, simClock )
 {
     var DeviceConsole = function( name ) {
         this._buffer  = [];
         this.outputEl = null;
         this.attached = false;
+        this.newLine  = true;
         if( name ) {
             this.name = name;
             this.attachTo( name );
@@ -47,7 +48,7 @@ app.factory( 'DeviceConsole', function( $sanitize )
             
             if( this.domConsole.length ) {
                 this.name = name;
-                console.log( "Attached to console: " + this.name );
+                //console.log( "Attached to console: " + this.name );
                 this.attached = true;
                 
                 while( this._buffer.length ) {
@@ -59,12 +60,23 @@ app.factory( 'DeviceConsole', function( $sanitize )
     }
 
     DeviceConsole.prototype.log = function( text, span ) {
+    
+        var timeStr = "";
+        
+        // Only calculate a timestamp on the first log() of a new line
+        if( this.newLine ) {
+            timeStr = "<span class='gray'>"
+                        + $filter('clock')( simClock.getTime(), false )
+                        + ": </span>";        
+        }
+    
         if( !span ) {
-            this._out( u.escapeHTML( text ));
+            this._out( timeStr + u.escapeHTML( text ));
         }
         else {
-            this._out( "<span class='"+span+"'>"+ u.escapeHTML( text ) + "</span>" );
+            this._out( timeStr + "<span class='"+span+"'>"+ u.escapeHTML( text ) + "</span>" );
         }
+        this.newLine = false;
         return this;
     }
     
@@ -82,6 +94,7 @@ app.factory( 'DeviceConsole', function( $sanitize )
     
     DeviceConsole.prototype.endl = function() {
         this.log( "\n" );
+        this.newLine = true;
     }
     
     return DeviceConsole;

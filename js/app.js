@@ -30,75 +30,24 @@ var app = angular.module('SLApp', [ 'ui.bootstrap',
                                     'ngAnimate',
                                     'ngGrid',
                                     'ngSanitize',
-                                    'workspace_modal'
+                                    'workspace_modal',
+                                    'db_list',
+                                    'db_events',
+                                    'db_filters'
                                     ]);
 
-app.config( function( $tooltipProvider ) {
+app.config( function( $tooltipProvider, $logProvider ) {
 
-    $tooltipProvider.options( { placement: 'bottom',
+    $logProvider.debugEnabled(true);
+
+    $tooltipProvider.options( { placement: 'top',
                                 animation: true,
                                 popupDelay: 600,
                                 appendToBody: true });
-                                
-    //uiMaskConfig.maskDefinitions['H'] = /[0-9a-fA-F]/;
+
 });
 
-app.filter('stopwatch', function() {
-
-    return function( input ) {
-        //var ms = parseInt(input, 10);
-        
-        function addZ(n) {
-            return (n<10? '0':'') + n;
-        }
-
-        var ms = input % 1000;
-        input = (input - ms) / 1000;
-        var secs = input % 60;
-        input = (input - secs) / 60;
-        var mins = input % 60;
-        var hrs = (input - mins) / 60;
-
-        return addZ(hrs) + ':' + addZ(mins) + ':' + addZ(secs);
-    }
-});
-
-app.filter('truncate', function() {
-    
-    return function(input, limit) {
-        if( input != null && limit != null ) {
-            if( input.length > limit ) { 
-                return input.substring( 0, limit - 1 ) + "...";      
-            }
-            else { 
-                return input;
-            }
-        }
-        return null;
-    }
-});
-
-app.filter('capitalize', function() {
-    return function(input) {
-        if (input != null) {
-            input = input.toLowerCase();
-            return input.substring(0,1).toUpperCase() + input.substring(1);
-        }
-        return null;
-    }
-});
-
-app.filter('hexadecimal', function() {
-    
-    return function(input) {
-        if( input != null ) { 
-            return input.toString( 16 );        
-        }
-        return null;
-    }
-});
-
-app.run( function( main, img, canvas, $http, _import ) 
+app.run( function( main, img, canvas, canvasEvents, $http, _import ) 
 {
     /* The JSON manifest file tells us what images to load, what diagrams are available, 
      * and other global settings
@@ -121,6 +70,7 @@ app.run( function( main, img, canvas, $http, _import )
             console.log( "Loaded " + nImages + " images." );
             
             canvas.init("C");
+            canvasEvents.register();
             main.init();        
         
             _.forEach( data.diagrams, function( d ) {
@@ -228,9 +178,11 @@ app.factory( 'state', function()
         },
         sim: {
             running: { enter: null, exit: null },
+            paused:  { enter: null, exit: null },
             stopped: { enter: null, exit: null }
         }
     };
+    
     var _appState = { editor: "add", sim: "stopped" };
 
     function set( type, mode ) {
