@@ -10,12 +10,12 @@
    
 }
 
-.sl-infobox-container {
+.sl-textbox-container {
    z-index: 100;
 
 }
 
-.sl-infobox {
+.sl-textbox {
     padding: 10px 10px 10px 10px;
     position: absolute;
     /* overflow: hidden; Can't use hidden or we hide our pseudoelements :( */
@@ -46,23 +46,23 @@
     */
 }
 
-.sl-infobox.top {
+.sl-textbox.top {
   margin-top: -10px;
 }
 
-.sl-infobox.right {
+.sl-textbox.right {
   margin-left: 10px;
 }
 
-.sl-infobox.bottom {
+.sl-textbox.bottom {
   margin-top: 10px;
 }
 
-.sl-infobox.left {
+.sl-textbox.left {
   margin-left: -10px;
 }
 
-.sl-infobox-title {
+.sl-textbox-title {
   padding: 8px 14px;
   margin: 0;
   font-size: 14px;
@@ -73,12 +73,12 @@
   border-radius: 5px 5px 0 0;
 }
 
-.sl-infobox-content {
+.sl-textbox-content {
   padding: 6px 4px;
 }
 
-.sl-infobox .arrow,
-.sl-infobox .arrow:after {
+.sl-textbox .arrow,
+.sl-textbox .arrow:after {
   position: absolute;
   display: block;
   width: 0;
@@ -87,16 +87,16 @@
   border-style: solid;
 }
 
-.sl-infobox .arrow {
+.sl-textbox .arrow {
   border-width: 11px;
 }
 
-.sl-infobox .arrow:after {
+.sl-textbox .arrow:after {
   border-width: 10px;
   content: "";
 }
 
-.sl-infobox.top .arrow {
+.sl-textbox.top .arrow {
   bottom: -11px;
   left: 50%;
   margin-left: -11px;
@@ -105,7 +105,7 @@
   border-bottom-width: 0;
 }
 
-.sl-infobox.top .arrow:after {
+.sl-textbox.top .arrow:after {
   bottom: 1px;
   margin-left: -10px;
   border-top-color: #ffffff;
@@ -113,7 +113,7 @@
   content: " ";
 }
 
-.sl-infobox.right .arrow {
+.sl-textbox.right .arrow {
   top: 50%;
   left: -11px;
   margin-top: -11px;
@@ -122,7 +122,7 @@
   border-left-width: 0;
 }
 
-.sl-infobox.right .arrow:after {
+.sl-textbox.right .arrow:after {
   bottom: -10px;
   left: 1px;
   border-right-color: #ffffff;
@@ -130,7 +130,7 @@
   content: " ";
 }
 
-.sl-infobox.bottom .arrow {
+.sl-textbox.bottom .arrow {
   top: -11px;
   left: 50%;
   margin-left: -11px;
@@ -139,7 +139,7 @@
   border-top-width: 0;
 }
 
-.sl-infobox.bottom .arrow:after {
+.sl-textbox.bottom .arrow:after {
   top: 1px;
   margin-left: -10px;
   border-bottom-color: #ffffff;
@@ -147,7 +147,7 @@
   content: " ";
 }
 
-.sl-infobox.left .arrow {
+.sl-textbox.left .arrow {
   top: 50%;
   right: -11px;
   margin-top: -11px;
@@ -156,7 +156,7 @@
   border-right-width: 0;
 }
 
-.sl-infobox.left .arrow:after {
+.sl-textbox.left .arrow:after {
   right: 1px;
   bottom: -10px;
   border-left-color: #ffffff;

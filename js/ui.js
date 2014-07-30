@@ -393,8 +393,8 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels, STP_
         updateScope.$apply();
     }
     
-    function addInfoBox( box ) {
-        var updateScope = angular.element('[ng-controller=slInfoBoxList]').scope();
+    function addTextBox( box ) {
+        var updateScope = angular.element('[ng-controller=slTextBoxList]').scope();
         $timeout( function() { updateScope.addBox( box ) }, 0, true );
     }
     
@@ -419,7 +419,7 @@ app.factory( 'ui', function( $workspace_modal, $timeout, sim, uiInfoPanels, STP_
         updateClock:    updateClock,
         updatePanels:   updatePanels,
         updateTabs:     updateTabs,
-        addInfoBox:     addInfoBox,
+        addTextBox:     addTextBox,
         attachConsoles: attachConsoles,
         msgBox:         msgBox
     }

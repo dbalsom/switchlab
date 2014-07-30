@@ -97,11 +97,13 @@ app.factory( 'canvasEvents', function( canvas, sim, events, ui ) {
             
             case "BECAME_ROOT":
                 var node = canvas.getNodeByKey( params.key );
-                ui.addInfoBox( { x: node.x, y: node.y,
-                     type: "arrow", 
-                     pos: 'below', 
-                     dist: 40, 
-                     html: "I am the root!" });
+                ui.addTextBox( { key: params.key,
+                                 x: node.x, y: node.y,
+                                 type: "arrow", 
+                                 pos: 'below', 
+                                 dist: 40, 
+                                 html: "I am the root!" });
+                     
             break;
             
             case "ROOT_CHANGED":
@@ -114,7 +116,8 @@ app.factory( 'canvasEvents', function( canvas, sim, events, ui ) {
                 else {
                     str = "Invalid root ID received!";
                 }
-                ui.addInfoBox( { x: node.x, y: node.y,
+                ui.addTextBox( { key: params.key,
+                                 x: node.x, y: node.y,
                                  type: "arrow", 
                                  pos: 'below', 
                                  dist: 40, 

@@ -23,47 +23,44 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-app.directive('slInfobox', function( $sanitize ) {
+app.directive('slTextbox', function( $sanitize ) {
 
     return {
     
         restrict: 'E',
-        template: '<div class="sl-infobox zoom-in glow">' +
-                  //'  <div class="sl-infobox-content" ng-bind-html="infobox.html"></div>' +
+        template: '<div class="sl-textbox zoom-in glow">' +
+                  //'  <div class="sl-textbox-content" ng-bind-html="textbox.html"></div>' +
                   '</div>',
         replace: true,
         controller: ['$scope', function($scope) {
-
         
         }],
         link: function (scope, element, attrs) {
         
-            element.append( '<div class="sl-infobox-content">' 
-                            + $sanitize( scope.infobox.html )
+            element.append( '<div class="sl-textbox-content">' 
+                            + $sanitize( scope.textbox.html )
                             + '</div>' );
         
-            if( scope.infobox.type == "arrow" ) {
+            if( scope.textbox.type == "arrow" ) {
                 element.append( '<div class="arrow"></div>' );
             }
 
             console.log( "Elem height: " + element.height() + " Width: " + element.width() );
-            console.log( "Elem dist: " + scope.infobox.dist );
+            console.log( "Elem dist: " + scope.textbox.dist );
                                 
-            
-            switch( scope.infobox.pos ) {
+            switch( scope.textbox.pos ) {
            
                 case 'above':
                     element.addClass( "top" );
-                    
 
-                    element.css( 'bottom', scope.infobox.y - scope.infobox.dist );
-                    element.css( 'left', scope.infobox.x - element.width()/2 );
+                    element.css( 'bottom', scope.textbox.y - scope.textbox.dist );
+                    element.css( 'left', scope.textbox.x - element.width()/2 );
                     break;
                 case 'below':
                     element.addClass( "bottom" );
                     
-                    element.css( 'top', scope.infobox.y + scope.infobox.dist );
-                    element.css( 'left', scope.infobox.x - element.width()/2 );                    
+                    element.css( 'top', scope.textbox.y + scope.textbox.dist );
+                    element.css( 'left', scope.textbox.x - element.width()/2 );                    
                     break;
                     
                 case 'left':
@@ -73,33 +70,36 @@ app.directive('slInfobox', function( $sanitize ) {
                 case 'right':
                     element.addClass( "right" );
                     break;
+                    
+                case 'at':
                 default:
-                    element.css( 'top', scope.infobox.y );
-                    element.css( 'left', scope.infobox.x );
+                    element.css( 'top', scope.textbox.y );
+                    element.css( 'left', scope.textbox.x );
                     break;
             }
-
-
-            
         }
     };
 });
 
-app.controller('slInfoBoxList', [ '$scope', 
+app.controller('slTextBoxList', [ '$scope', 
     function( $scope ) {
     
-        $scope.infoboxes = [
-            { x: 100, y:100, type: "arrow", pos: 'below', dist: 20, html: "<h4>Foo!</h4>" }
-            ];
+        $scope.textboxes = {};
+
         $scope.addBox = function( box ) {
-            $scope.infoboxes.push( box );
-            console.log("Added a InfoBox");
+            if( box.key ) {
+                // Trigger ng-animate on removing the old textbox
+                $scope.$apply( function() { 
+                    delete $scope.textboxes[box.key];
+                });
+                $scope.textboxes[box.key] = box;
+            }
         }
     
     }
 ]);
 
-app.controller('slInfoBoxController', [ '$scope', 
+app.controller('slTextBoxController', [ '$scope', 
     function( $scope ) {
     
     }

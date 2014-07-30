@@ -79,9 +79,8 @@
               <sl-notify></sl-notify>
             
               <!-- Infoboxes report device events, etc -->
-              <div class="sl-infobox-container" ng-controller="slInfoBoxList">
-                <sl-infobox ng-repeat="infobox in infoboxes">
-                </sl-infobox>
+              <div class="sl-textbox-container" ng-controller="slTextBoxList">
+                <sl-textbox ng-repeat="textbox in textboxes"></sl-textbox>
               </div>            
               
               <canvas id="C" width="900" height="600" class="sim-canvas" ></canvas>
