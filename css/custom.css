@@ -149,10 +149,7 @@ select.form-control {
 }
 
 .sl-accordion .panel-heading {
-    background-image: -o-linear-gradient(bottom, #626B70 0%, #464C56 100%);
-    background-image: -moz-linear-gradient(bottom, #626B70 0%, #464C56 100%);
-    background-image: -webkit-linear-gradient(bottom, #626B70 0%, #464C56  100%);
-    background-image: -ms-linear-gradient(bottom, #626B70 0%, #464C56  100%);
+
     background-image: linear-gradient(to bottom,  #626B70 0%, #464C56 100%);
 
     padding: 5px 10px 5px 10px;
@@ -230,12 +227,7 @@ select.form-control {
 }
 
 .data-table-array .data-table-subheader {
-  /* background-color: #9daabf; */
     background-color: #b2c1d9;
-    background-image: -o-linear-gradient(bottom, #c7d7f2 0%, #9DAABF 100%);
-    background-image: -moz-linear-gradient(bottom, #c7d7f2 0%, #9DAABF 100%);
-    background-image: -webkit-linear-gradient(bottom, #c7d7f2 0%, #9DAABF 100%);
-    background-image: -ms-linear-gradient(bottom, #c7d7f2 0%, #9DAABF 100%);
     background-image: linear-gradient(to bottom, #c7d7f2 0%, #9DAABF 100%);
     
     padding-left: 10px;
@@ -323,19 +315,8 @@ select.data-table-combo {
 
 .btn3d {
     border: 1px outset;
-    background-image: -webkit-gradient(
-      linear,
-      left top,
-      left bottom,
-      color-stop(0.05, #EEEEEE),
-      color-stop(0.33, #DDDDDD),
-      color-stop(0.66, #CCCCCC),
-      color-stop(1, #AAAAAA)
-    );
-    background-image: -o-linear-gradient(bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
-    background-image: -moz-linear-gradient(bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
-    background-image: -webkit-linear-gradient(bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
-    background-image: -ms-linear-gradient(bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
+
+    background-color: #AAAAAA;
     background-image: linear-gradient(to bottom, #EEEEEE 5%, #DDDDDD 33%, #CCCCCC 66%, #AAAAAA 100%);
     
     -webkit-box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
@@ -347,23 +328,19 @@ select.data-table-combo {
  *  Simulation area toolbar
  */ 
 .toolbar {
-    background-image: -webkit-gradient(
-        linear,
-        left top,
-        left bottom,
-        color-stop(0, #626B70),
-        color-stop(1, #464C56)
-    );
-    background-image: -o-linear-gradient(bottom, #626B70 0%, #464C56 100%);
-    background-image: -moz-linear-gradient(bottom, #626B70 0%, #464C56 100%);
-    background-image: -webkit-linear-gradient(bottom, #626B70 0%, #464C56  100%);
-    background-image: -ms-linear-gradient(bottom, #626B70 0%, #464C56  100%);
-    background-image: linear-gradient(to bottom,  #626B70 0%, #464C56 100%);
-
+    
+    background-color: #464C56;
+    /*
+    background-image: linear-gradient( to bottom, #626B70 0%, #464C56 100%);
+    */
+    background-image: linear-gradient( to bottom, #A2AFB6 0%, #626B70 8%, #464C56 90%, #363A41 100% );
+    border: 1px solid black;
+    
     height: 42px;
-    border: 2px LightSlateGray outset;
-    border-style: outset;
-    padding: 5px;
+    /*border: 2px outset LightSlateGray;*/
+    /*border: 2px outset #626B70 ;*/
+
+    padding: 6px 5px ;
 
     top: 5px;
     left: 5px;

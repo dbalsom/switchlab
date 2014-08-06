@@ -81,8 +81,8 @@ app.factory( 'mouse', function() {
     };
 });
 
-app.constant( 'PROTOCOL_COLORS', { "STP": "FFA500",
-                                   "ARP": "DB7093" } );
+app.constant( 'PROTOCOL_COLORS', { "STP": "#FFA500",
+                                   "ARP": "#DB7093" } );
 
 
 app.factory( 'canvasEvents', function( canvas, sim, events, ui ) {
@@ -611,18 +611,17 @@ app.factory( 'canvas', function( state, img, sim, DeviceDefs, mouse, ui,
                 if( state == undefined ) {
                     console.log( "Couldn't get state for: " + iface.intName );
                 }
+                
                 var bubbleColor = "white";
                 switch( state ) {
                     
                     case "blk": 
-
-                        bubbleColor = "CC0000";
+                        bubbleColor = "#CC0000";
                         break;
-
                 }
                 
                 srcBubbleShape.graphics
-                    .beginStroke("black").setStrokeStyle(1).beginFill(bubbleColor)
+                    .beginStroke("black").setStrokeStyle(1).beginFill( bubbleColor )
                     .drawCircle( srcPtLocal.x, srcPtLocal.y, INTERFACE_RADIUS )
                     .endFill()
                     .endStroke();
@@ -715,7 +714,7 @@ app.factory( 'canvas', function( state, img, sim, DeviceDefs, mouse, ui,
 
         // "\uF024"  flag
         // "\uF0E8"  tree?
-        this.nodeStatus = createOutlinedText( "", "20px FontAwesome", "FFFF94", "Black", 1.5, "center" );
+        this.nodeStatus = createOutlinedText( "", "20px FontAwesome", "#FFFF94", "Black", 1.5, "center" );
         this.nodeStatus.x = this.nodeImg.width/4;
         this.nodeStatus.y = this.nodeImg.height - this.nodeImg.height / 2;
         this.nodeStatus.shadow = new createjs.Shadow("rgba(0,0,0,.5)", 3, 3, 8);
